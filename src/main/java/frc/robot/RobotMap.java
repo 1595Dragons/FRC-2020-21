@@ -25,7 +25,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 public class RobotMap {
 
 	
-	private CANSparkMax shooter1,shooter2,feeder,revolver;
+	public CANSparkMax shooter1,shooter2,feeder,revolver;
 	CANPIDController s_pidController;
 	CANPIDController f_pidController;
 	CANPIDController r_pidController;
@@ -35,7 +35,7 @@ public class RobotMap {
 	
 	private static final int shooter1ID = 1, shooter2ID = 7,feederID=2,revolverID=8;
 	public double kP, kI, kD, kIz, kFF, kMaxOutput, kMinOutput, maxRPM;
-	public double s_kp=0.00025,s_ki=0.000001,s_kd=0,s_kiz=3000,s_kff=0,s_kMaxOutput=1,s_kMinOutput=-1,s_maxRPM=5700;
+	public double s_kp=0.000050,s_ki=0.0000001,s_kd=0,s_kiz=200,s_kff=0.000175,s_kMaxOutput=0,s_kMinOutput=-1,s_maxRPM=5700, s_iAccum=0;
 	public double f_kp=0.00015,f_ki=0.000001,f_kd=0,f_kiz=2000,f_kff=0,f_kMaxOutput=1,f_kMinOutput=-1,f_maxRPM=5700;
 	public double r_kp=0.00025,r_ki=0.000001,r_kd=0,r_kiz=2000,r_kff=0,r_kMaxOutput=1,r_kMinOutput=-1,r_maxRPM=5700;
 
@@ -57,12 +57,12 @@ public class RobotMap {
 		this.rightDrive = new TalonSRX(this.PracticerightDrive1Port);
 		this.rightDrive2 = new TalonSRX(this.PracticerightDrive2Port);
 		this.rightDrive3 = new TalonSRX(this.PracticerightDrive3Port);
-		/*
+		
 		this.shooter1=new CANSparkMax(this.shooter1ID, MotorType.kBrushless);
 		this.shooter2=new CANSparkMax(this.shooter2ID, MotorType.kBrushless);
 		this.feeder=new CANSparkMax(this.feederID, MotorType.kBrushless);
 		this.revolver=new CANSparkMax(this.revolverID, MotorType.kBrushless);
-		*/
+		
 
 		//this.leftDrive.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder);
 		//this.rightDrive.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder);
@@ -71,7 +71,7 @@ public class RobotMap {
 		this.leftDrive3.set(ControlMode.Follower, this.leftDrive.getDeviceID());
 		this.rightDrive2.set(ControlMode.Follower, this.rightDrive.getDeviceID());
 		this.rightDrive3.set(ControlMode.Follower, this.rightDrive.getDeviceID());
-		//this.shooter2.follow(this.shooter1);
+		this.shooter2.follow(this.shooter1);
 
 		this.rightDrive.setNeutralMode(NeutralMode.Brake);
 		this.leftDrive.setNeutralMode(NeutralMode.Brake);
@@ -90,7 +90,7 @@ public class RobotMap {
 		this.rightDrive2.configContinuousCurrentLimit(this.currentlimit);
 		this.rightDrive3.configContinuousCurrentLimit(this.currentlimit);
 		*/
-		/*
+		
 		f_pidController=feeder.getPIDController();
 		s_pidController=shooter1.getPIDController();
 		r_pidController=revolver.getPIDController();
@@ -98,11 +98,14 @@ public class RobotMap {
 		f_encoder=feeder.getEncoder();
 		s_encoder=shooter1.getEncoder();
 		r_encoder=revolver.getEncoder();
+
+		s_pidController.setIMaxAccum(this.s_iAccum, 0);
+		
 		
 		setUpPIDController(s_pidController,s_kp,s_ki,s_kd,s_kiz,s_kff,s_kMaxOutput,s_kMinOutput);
 		setUpPIDController(r_pidController,r_kp,r_ki,r_kd,r_kiz,r_kff,r_kMaxOutput,r_kMinOutput);
 		setUpPIDController(f_pidController,f_kp,f_ki,f_kd,f_kiz,f_kff,f_kMaxOutput,f_kMinOutput);
-		*/
+		
 		this.limelight = NetworkTableInstance.getDefault().getTable("limelight");
 
 

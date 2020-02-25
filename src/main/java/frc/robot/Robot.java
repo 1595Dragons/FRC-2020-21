@@ -4,6 +4,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import jdk.jfr.Threshold;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.revrobotics.CANEncoder;
@@ -15,14 +16,13 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import org.opencv.core.Mat;
 
 import edu.wpi.first.wpilibj.GenericHID.Hand;
+import edu.wpi.first.wpilibj.kinematics.DifferentialDriveKinematics;
 
 public class Robot extends TimedRobot {
   //private Joystick s_stick;
-
-  private Timer time;
   private RobotMap robot = new RobotMap();
-  private double feedSpeed=2000,feedRatio=1.8, shooterPower = .75;
-  private double tx_kp=0.009,tx_ki=0.00008,tx_kd=0.005,tx_iMax=0.15,
+  private double feedSpeed=2000,feedRatio=1.8, shooterPower = .74;
+  private double tx_kp=0.01,tx_ki=0.005,tx_kd=0.06,tx_iMax=0.06,
                 ty_kp=0.016,ty_ki=0.0001,ty_kd=0;
   private double txShoot=0,tyShoot=0,taShoot=0.1;
   private MiniPID tx_Pid=new MiniPID(tx_kp, tx_ki, tx_kd);
@@ -36,10 +36,7 @@ public class Robot extends TimedRobot {
                 shooterAngleMax=65,shooterAngleMin=30, goalDepth=29.25;
   private double shooterAngle,shooterVelocity,shooterSetPoint;
 
-  /**
-   * This function is run when the robot is first started up and should be
-   * used for any initialization code.
-   */
+  
   @Override
   public void robotInit() {
 
@@ -51,6 +48,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("s_kff", robot.s_kff);
     SmartDashboard.putNumber("s_kMaxOutput", robot.s_kMaxOutput);
     SmartDashboard.putNumber("s_kkMinOutput", robot.s_kMinOutput);
+    SmartDashboard.putNumber("s_iAccum", robot.s_iAccum);
     SmartDashboard.putNumber("r_kp", robot.r_kp);
     SmartDashboard.putNumber("r_ki", robot.r_ki);
     SmartDashboard.putNumber("r_kd", robot.r_kd);
@@ -107,7 +105,6 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopInit() {
     // Drive train PID
-    /*
     robot.setUpPIDController(robot.s_pidController, SmartDashboard.getNumber("s_kp", robot.s_kp), 
         SmartDashboard.getNumber("s_ki", robot.s_ki),SmartDashboard.getNumber("s_kd", robot.s_kd),
         SmartDashboard.getNumber("s_kiz", robot.s_kiz),SmartDashboard.getNumber("s_kff", robot.s_kff),
@@ -120,7 +117,7 @@ public class Robot extends TimedRobot {
         SmartDashboard.getNumber("r_ki", robot.r_ki),SmartDashboard.getNumber("r_kd", robot.r_kd),
         SmartDashboard.getNumber("r_kiz", robot.r_kiz),SmartDashboard.getNumber("r_kff", robot.r_kff),
         SmartDashboard.getNumber("r_kMaxOutput", robot.r_kMaxOutput),SmartDashboard.getNumber("r_kMinOutput", robot.r_kMinOutput));
-    */    
+    
     this.feedSpeed=SmartDashboard.getNumber("feedSpeed", feedSpeed);
     this.feedRatio=SmartDashboard.getNumber("feedRatio", feedRatio);
 
@@ -132,6 +129,7 @@ public class Robot extends TimedRobot {
     tx_ki=SmartDashboard.getNumber("tx_ki", tx_ki);
     tx_kd=SmartDashboard.getNumber("tx_kd", tx_kd);
     tx_iMax=SmartDashboard.getNumber("tx_iMax", tx_iMax);
+
     tx_Pid.reset();
     tx_Pid.setPID(tx_kp, tx_ki, tx_kd);
     tx_Pid.setMaxIOutput(tx_iMax);
@@ -145,7 +143,9 @@ public class Robot extends TimedRobot {
     ty_Pid.setPID(ty_kp, ty_ki, ty_kd);
     ty_Pid.setSetpoint(targetDistance);
     ty_Pid.setOutputLimits(0.4);
-    
+
+    robot.s_iAccum=SmartDashboard.getNumber("s_iAccum", robot.s_iAccum);
+    robot.s_pidController.setIMaxAccum(robot.s_iAccum, 0);
 
     
     /*
@@ -166,6 +166,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void teleopPeriodic() {
+      SmartDashboard.putNumber("Revolver setpoint", this.robot.shooter1.getOutputCurrent());
 
       // Calculate drive power
 			double forward = -this.robot.driver.getY(Hand.kLeft) * .9,
@@ -173,24 +174,34 @@ public class Robot extends TimedRobot {
       SmartDashboard.putNumber("forward",forward);
       SmartDashboard.putNumber("turn", turn);
       
+      if(this.robot.driver.getBButton()){
+        this.robot.r_pidController.setReference(feedSpeed*.5,ControlType.kVelocity);
+        this.robot.s_pidController.setReference(-robot.s_maxRPM*this.shooterPower, ControlType.kVelocity);
+        if(Math.abs(robot.s_encoder.getVelocity()-robot.s_maxRPM*this.shooterPower) < 200){
+          this.robot.f_pidController.setReference(feedSpeed*feedRatio,ControlType.kVelocity);
+        }
+      }else{
+        this.robot.f_pidController.setReference(0, ControlType.kVelocity);
+        this.robot.r_pidController.setReference(0, ControlType.kVelocity);
+        this.robot.s_pidController.setReference(0, ControlType.kVelocity);
+      }
       /*
       if (this.robot.driver.getAButton()){
         this.robot.f_pidController.setReference(feedSpeed*feedRatio,ControlType.kVelocity);
       }else{
         this.robot.f_pidController.setReference(0, ControlType.kVelocity);
       }
-      if (this.robot.driver.getBButton()){
-        this.robot.r_pidController.setReference(feedSpeed,ControlType.kVelocity);
-      }else if(this.robot.driver.getYButton()){
+      if(this.robot.driver.getYButton()){
         this.robot.r_pidController.setReference(feedSpeed*.5,ControlType.kVelocity);
       }else{
         this.robot.r_pidController.setReference(0, ControlType.kVelocity);
       }
       this.robot.s_pidController.setReference(-robot.s_maxRPM*this.robot.driver.getTriggerAxis(Hand.kLeft)*this.shooterPower, ControlType.kVelocity);
+      */
       SmartDashboard.putNumber("Feeder RPM", this.robot.f_encoder.getVelocity());
       SmartDashboard.putNumber("Shooter RPM", this.robot.s_encoder.getVelocity());
       SmartDashboard.putNumber("Revolver RPM", this.robot.r_encoder.getVelocity());
-      */
+      
       /*
       if (this.robot.driver.getBumper(Hand.kLeft)) {
 				this.robot.leftDrive.set(ControlMode.Velocity, (forward - turn) * this.maxVelDT);
@@ -248,20 +259,20 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("visionMovePower", visionMovePower);
     SmartDashboard.putNumber("targetDistance", targetDistance);
     SmartDashboard.putNumber("distance", distance);
-    if(robot.driver.getAButton()&&tv==1){
+    if(robot.driver.getXButton()&&tv==1){
       this.robot.leftDrive.set(ControlMode.PercentOutput, visionTurnPower);
       this.robot.rightDrive.set(ControlMode.PercentOutput, -visionTurnPower);
-    }else if (robot.driver.getXButton()&&tv==1){
+    }/* else if (robot.driver.getXButton()&&tv==1){
       this.robot.leftDrive.set(ControlMode.PercentOutput, -visionMovePower);
       this.robot.rightDrive.set(ControlMode.PercentOutput, -visionMovePower);
     }else if (robot.driver.getYButton()&&tv==1){
       this.robot.leftDrive.set(ControlMode.PercentOutput, -visionMovePower+visionTurnPower);
       this.robot.rightDrive.set(ControlMode.PercentOutput, -visionMovePower-visionTurnPower);
-    }else{
+    }*/else{
       this.robot.leftDrive.set(ControlMode.PercentOutput, (forward-turn)*.4);
       this.robot.rightDrive.set(ControlMode.PercentOutput, (forward+turn)*.4);
     }
-    if(robot.driver.getBButton()){
+    if(robot.driver.getXButtonPressed()){
         tx_Pid.reset();
         ty_Pid.reset();
       }
