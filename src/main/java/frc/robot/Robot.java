@@ -177,7 +177,7 @@ public class Robot extends TimedRobot {
       if(this.robot.driver.getBButton()){
         this.robot.r_pidController.setReference(feedSpeed*.5,ControlType.kVelocity);
         this.robot.s_pidController.setReference(-robot.s_maxRPM*this.shooterPower, ControlType.kVelocity);
-        if(Math.abs(robot.s_encoder.getVelocity()-robot.s_maxRPM*this.shooterPower) < 200){
+        if(Math.abs(robot.s_encoder.getVelocity()-robot.s_maxRPM*this.shooterPower) < 250){
           this.robot.f_pidController.setReference(feedSpeed*feedRatio,ControlType.kVelocity);
         }
       }else{
