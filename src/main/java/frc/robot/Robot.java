@@ -35,7 +35,14 @@ public class Robot extends TimedRobot {
   private double shooterHeight=20,g=386.2, goalHeight=98.25, 
                 shooterAngleMax=65,shooterAngleMin=30, goalDepth=29.25;
   private double shooterAngle,shooterVelocity,shooterSetPoint;
+  private boolean shooterReady=false;
 
+  private Timer autoTimer = new Timer();
+  private Timer shootTimer = new Timer();
+  private boolean firstTimeIndicator1=true;
+  private double autoEndTime=15;
+  private boolean shootingPositionA=false;
+  private boolean autoShoot=false;
   
   @Override
   public void robotInit() {
@@ -82,6 +89,10 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("ty_ki", ty_ki);
     SmartDashboard.putNumber("ty_kd", ty_kd);
 
+    //auto
+    SmartDashboard.putNumber("autoEndTime", autoEndTime);
+    SmartDashboard.putBoolean("autoShoot", autoShoot);
+
 
   }
     //this.zero = 2162;
@@ -90,6 +101,55 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousInit() {
+    robot.setUpPIDController(robot.s_pidController, SmartDashboard.getNumber("s_kp", robot.s_kp), 
+        SmartDashboard.getNumber("s_ki", robot.s_ki),SmartDashboard.getNumber("s_kd", robot.s_kd),
+        SmartDashboard.getNumber("s_kiz", robot.s_kiz),SmartDashboard.getNumber("s_kff", robot.s_kff),
+        SmartDashboard.getNumber("s_kMaxOutput", robot.s_kMaxOutput),SmartDashboard.getNumber("s_kMinOutput", robot.s_kMinOutput));
+    robot.setUpPIDController(robot.f_pidController, SmartDashboard.getNumber("f_kp", robot.f_kp), 
+        SmartDashboard.getNumber("f_ki", robot.f_ki),SmartDashboard.getNumber("f_kd", robot.f_kd),
+        SmartDashboard.getNumber("f_kiz", robot.f_kiz),SmartDashboard.getNumber("f_kff", robot.f_kff),
+        SmartDashboard.getNumber("f_kMaxOutput", robot.f_kMaxOutput),SmartDashboard.getNumber("f_kMinOutput", robot.f_kMinOutput));
+    robot.setUpPIDController(robot.r_pidController, SmartDashboard.getNumber("r_kp", robot.r_kp), 
+        SmartDashboard.getNumber("r_ki", robot.r_ki),SmartDashboard.getNumber("r_kd", robot.r_kd),
+        SmartDashboard.getNumber("r_kiz", robot.r_kiz),SmartDashboard.getNumber("r_kff", robot.r_kff),
+        SmartDashboard.getNumber("r_kMaxOutput", robot.r_kMaxOutput),SmartDashboard.getNumber("r_kMinOutput", robot.r_kMinOutput));
+    
+    this.feedSpeed=SmartDashboard.getNumber("feedSpeed", feedSpeed);
+    this.feedRatio=SmartDashboard.getNumber("feedRatio", feedRatio);
+
+    targetDistance=SmartDashboard.getNumber("targetDistance", targetDistance);
+    taShoot=SmartDashboard.getNumber("taShoot",taShoot);
+    txShoot=SmartDashboard.getNumber("txShoot", txShoot);
+    tyShoot=SmartDashboard.getNumber("tyShoot", tyShoot);
+    tx_kp=SmartDashboard.getNumber("tx_kp", tx_kp);
+    tx_ki=SmartDashboard.getNumber("tx_ki", tx_ki);
+    tx_kd=SmartDashboard.getNumber("tx_kd", tx_kd);
+    tx_iMax=SmartDashboard.getNumber("tx_iMax", tx_iMax);
+
+    tx_Pid.reset();
+    tx_Pid.setPID(tx_kp, tx_ki, tx_kd);
+    tx_Pid.setMaxIOutput(tx_iMax);
+    tx_Pid.setSetpoint(txShoot);
+    tx_Pid.setOutputLimits(0.4);
+
+    ty_kp=SmartDashboard.getNumber("ty_kp", ty_kp);
+    ty_ki=SmartDashboard.getNumber("ty_ki", ty_ki);
+    ty_kd=SmartDashboard.getNumber("ty_kd", ty_kd);
+    ty_Pid.reset();
+    ty_Pid.setPID(ty_kp, ty_ki, ty_kd);
+    ty_Pid.setSetpoint(targetDistance);
+    ty_Pid.setOutputLimits(0.4);
+
+    robot.s_iAccum=SmartDashboard.getNumber("s_iAccum", robot.s_iAccum);
+    robot.s_pidController.setIMaxAccum(robot.s_iAccum, 0);
+    NetworkTableInstance.getDefault().getTable("limelight").getEntry("pipeline").setNumber(0);
+    autoTimer.reset();
+    autoEndTime=SmartDashboard.getNumber("autoEndTime", autoEndTime);
+    autoShoot=SmartDashboard.getBoolean("autoShoot", autoShoot);
+    shootingPositionA=false;
+    shooterReady=false;
+    firstTimeIndicator1=true;
+
   }
 
   /**
@@ -97,6 +157,61 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousPeriodic() {
+    
+    double tv = robot.limelight.getEntry("tv").getDouble(0);
+		double tx = robot.limelight.getEntry("tx").getDouble(0);
+		double ty = robot.limelight.getEntry("ty").getDouble(0);
+    double ta = robot.limelight.getEntry("ta").getDouble(0);
+    double distance=(visionCenterHeight-cameraHeight)/Math.tan(Math.toRadians(cameraAngle+ty))*distanceModifier;
+    double visionTurnPower=tx_Pid.getOutput(tx);
+    double visionMovePower=ty_Pid.getOutput(distance);
+    SmartDashboard.putNumber("tv", tv);
+    SmartDashboard.putNumber("ta", ta);
+    SmartDashboard.putNumber("tx", tx);
+    SmartDashboard.putNumber("ty", ty);
+    SmartDashboard.putNumber("visionTurnPower", visionTurnPower);
+    SmartDashboard.putNumber("visionMovePower", visionMovePower);
+    SmartDashboard.putNumber("targetDistance", targetDistance);
+    SmartDashboard.putNumber("distance", distance);
+
+    if (shootingPositionA==false){
+      this.robot.leftDrive.set(ControlMode.PercentOutput, -visionMovePower+visionTurnPower);
+      this.robot.rightDrive.set(ControlMode.PercentOutput, -visionMovePower-visionTurnPower);
+      if (getError(0, tx)<0.5&&getError(targetDistance, distance)<1){
+        shootingPositionA=true;
+        this.robot.leftDrive.set(ControlMode.PercentOutput, 0);
+      this.robot.rightDrive.set(ControlMode.PercentOutput, 0);
+      }
+    }else if (autoShoot){
+      if (firstTimeIndicator1){
+        firstTimeIndicator1=false;
+        shootTimer.reset();
+      }
+      this.robot.r_pidController.setReference(feedSpeed*.5,ControlType.kVelocity);
+      this.robot.s_pidController.setReference(-robot.s_maxRPM*this.shooterPower, ControlType.kVelocity);
+      if (getError(-robot.s_encoder.getVelocity(), robot.s_maxRPM*this.shooterPower)<200);{
+        shooterReady=true;
+      }
+      if(shooterReady){
+        this.robot.f_pidController.setReference(feedSpeed*feedRatio,ControlType.kVelocity);
+      }
+      while (shootTimer.get()>7){
+        this.robot.r_pidController.setReference(0,ControlType.kVelocity);
+        this.robot.s_pidController.setReference(0, ControlType.kVelocity);
+        this.robot.f_pidController.setReference(0,ControlType.kVelocity);
+      }
+    }
+    
+    
+    
+   
+    while (autoTimer.get()>autoEndTime){
+      //stop
+    }
+    SmartDashboard.putBoolean("shootingPositionA", shootingPositionA);
+    SmartDashboard.putBoolean("shooterReady", shooterReady);
+    
+
   }
 
   /**
@@ -160,6 +275,7 @@ public class Robot extends TimedRobot {
     */
 
     NetworkTableInstance.getDefault().getTable("limelight").getEntry("pipeline").setNumber(0);
+    shooterReady=false;
   }
   /**
    * This function is called periodically during teleoperated mode.
@@ -169,16 +285,25 @@ public class Robot extends TimedRobot {
       SmartDashboard.putNumber("Revolver setpoint", this.robot.shooter1.getOutputCurrent());
 
       // Calculate drive power
-			double forward = -this.robot.driver.getY(Hand.kLeft) * .9,
+      double forward = -this.robot.driver.getY(Hand.kLeft) * .9,
       turn = this.robot.driver.getX(Hand.kRight)*.7;
       SmartDashboard.putNumber("forward",forward);
       SmartDashboard.putNumber("turn", turn);
       
+      if(this.robot.driver.getBackButtonPressed()){
+        shooterReady=false;
+      }
+      if(this.robot.driver.getBButtonReleased()){
+        shooterReady=false;
+      }
+      if(shooterReady){
+        this.robot.f_pidController.setReference(feedSpeed*feedRatio,ControlType.kVelocity);
+      }
       if(this.robot.driver.getBButton()){
         this.robot.r_pidController.setReference(feedSpeed*.5,ControlType.kVelocity);
         this.robot.s_pidController.setReference(-robot.s_maxRPM*this.shooterPower, ControlType.kVelocity);
-        if(Math.abs(robot.s_encoder.getVelocity()-robot.s_maxRPM*this.shooterPower) < 250){
-          this.robot.f_pidController.setReference(feedSpeed*feedRatio,ControlType.kVelocity);
+        if(Math.abs(-robot.s_encoder.getVelocity()-robot.s_maxRPM*this.shooterPower) < 250){
+          shooterReady=true;
         }
       }else{
         this.robot.f_pidController.setReference(0, ControlType.kVelocity);
@@ -282,6 +407,8 @@ public class Robot extends TimedRobot {
       SmartDashboard.putNumber("shooterAngle",Math.toDegrees(shooterAngle));
       SmartDashboard.putNumber("shooterVelocity", shooterVelocity);
       SmartDashboard.putNumber("shooterSetPoint", shooterSetPoint);
+      SmartDashboard.putBoolean("shooterReady", shooterReady);
+      SmartDashboard.putNumber("shooterReadyNumber", Math.abs(-robot.s_encoder.getVelocity()-robot.s_maxRPM*this.shooterPower));
 
   }
 
@@ -291,4 +418,8 @@ public class Robot extends TimedRobot {
   @Override
   public void testPeriodic() {
   }
+
+  private double getError(double A,double B){
+		return(Math.abs(A-B));
+	}
 }

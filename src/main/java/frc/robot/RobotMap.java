@@ -107,10 +107,6 @@ public class RobotMap {
 		setUpPIDController(f_pidController,f_kp,f_ki,f_kd,f_kiz,f_kff,f_kMaxOutput,f_kMinOutput);
 		
 		this.limelight = NetworkTableInstance.getDefault().getTable("limelight");
-
-
-
-
 	}
 
 	
@@ -125,6 +121,8 @@ public class RobotMap {
 		pidController.setFF(kff);
 		pidController.setOutputRange(kMin, kMax);
 	}
-	
+	double getError(double A,double B){
+		return(Math.abs(A-B));
+	}
 }
 	
