@@ -1,46 +1,49 @@
 package frc.robot;
 
-/*import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.can.TalonSRXConfiguration;
-import com.ctre.phoenix.motorcontrol.can.TalonSRX;*/
 import com.revrobotics.CANEncoder;
 import com.revrobotics.CANPIDController;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
-//import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
-/*import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.Servo;
-import edu.wpi.first.wpilibj.Solenoid;*/
+import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.XboxController;
-//import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 
 
 public class RobotMap {
 
 	
 	public CANSparkMax leftDrive, rightDrive, leftDrive2, rightDrive2, shooter1,shooter2,feeder,revolver;
-	/*CANPIDController s_pidController;
-	CANPIDController f_pidController;
-	CANPIDController r_pidController;
-	CANEncoder s_encoder;
-	CANEncoder f_encoder;
-	CANEncoder r_encoder;*/
+	public CANPIDController s_pidController;
+	public CANPIDController f_pidController;
+	public CANPIDController r_pidController;
+	public CANEncoder s_encoder;
+	public CANEncoder f_encoder;
+	public CANEncoder r_encoder;
 
-	CANPIDController leftdrive_pidController;
-	CANEncoder leftdrive_pidController_encoder;
+	public CANPIDController leftdrive_pidController;
+	public CANEncoder leftdrive_pidController_encoder;
+	public Servo shooterServo1, shooterServo2;
+	public DoubleSolenoid shifter;
 
-	CANPIDController rightdrive_pidController;
-	CANEncoder rightdrive_pidController_encoder;
+	public CANPIDController rightdrive_pidController;
+	public CANEncoder rightdrive_pidController_encoder;
+	private static final int shooter1ID = 9, shooter2ID = 7,feederID=10,revolverID=8, leftDrive1Port = 1, leftDrive2Port = 2, rightDrive1Port = 3, rightDrive2Port = 4;
+	private static final int shooterServo1Port=1,shooterServo2Port=2, shifterPort1=3,shifterPort2=4;
+	
 	public double gearRatioLow=14.88,gearRatioHigh=6.55;
 	public double wheelRotationToInch=Math.PI*6;
-	private static final int shooter1ID = 9, shooter2ID = 7,feederID=10,revolverID=8, leftDrive1Port = 1, leftDrive2Port = 2, rightDrive1Port = 3, rightDrive2Port = 4;
+	
 	public double kP, kI, kD, kIz, kFF, kMaxOutput, kMinOutput, maxRPM;
 	public double dv_kp=.0001, dv_ki=.000002, dv_kd=.000001, dv_kiz=500, dv_kff=.000175, dv_maxRPM=5700;
 	public double dp_kp=.0018, dp_ki=.000002, dp_kd=.000001, dp_kiz=500, dp_kff=.000175, dp_maxRPM=5700; 
@@ -50,30 +53,24 @@ public class RobotMap {
 
 	public double limelight2MaxY=24.85,limelight2MaxX=29.8;
 
-	//public TalonSRX leftDrive, rightDrive,leftDrive2, rightDrive2, leftDrive3, rightDrive3;
-
 	public final XboxController driver = new XboxController(0), operator = new XboxController(1);
 
 	public NetworkTable limelight;
 
 	RobotMap() {
-		this.leftDrive = new CANSparkMax(1, MotorType.kBrushless);
-		this.leftDrive2 = new CANSparkMax(5, MotorType.kBrushless);
-		this.rightDrive = new CANSparkMax(3, MotorType.kBrushless);
-		this.rightDrive2 = new CANSparkMax(4, MotorType.kBrushless);
+		this.leftDrive = new CANSparkMax(leftDrive1Port, MotorType.kBrushless);
+		this.leftDrive2 = new CANSparkMax(leftDrive2Port, MotorType.kBrushless);
+		this.rightDrive = new CANSparkMax(rightDrive1Port, MotorType.kBrushless);
+		this.rightDrive2 = new CANSparkMax(rightDrive2Port, MotorType.kBrushless);
 		
-	/*this.shooter1=new CANSparkMax(shooter1ID, MotorType.kBrushless);
+		this.shooter1=new CANSparkMax(shooter1ID, MotorType.kBrushless);
 		this.shooter2=new CANSparkMax(shooter2ID, MotorType.kBrushless);
 		this.feeder=new CANSparkMax(feederID, MotorType.kBrushless);
 		this.revolver=new CANSparkMax(revolverID, MotorType.kBrushless);
-		*/
-
-		//this.leftDrive.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder);
-		//this.rightDrive.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder);
 
 		this.leftDrive2.follow(this.leftDrive);
 		this.rightDrive2.follow(this.rightDrive);
-		//this.shooter2.follow(this.shooter1);
+		this.shooter2.follow(this.shooter1);
 		this.leftDrive.setInverted(false);
 		this.leftDrive2.setInverted(false);
 		this.rightDrive.setInverted(true);
@@ -88,7 +85,7 @@ public class RobotMap {
 		setUpPIDController(rightdrive_pidController,dv_kp,dv_ki,dv_kd,dv_kiz,dv_kff,1,-1);
 		setUpPIDController(leftdrive_pidController,dv_kp,dv_ki,dv_kd,dv_kiz,dv_kff,1,-1);
 
-		/*f_pidController=feeder.getPIDController();
+		f_pidController=feeder.getPIDController();
 		s_pidController=shooter1.getPIDController();
 		r_pidController=revolver.getPIDController();
 
@@ -104,11 +101,12 @@ public class RobotMap {
 		setUpPIDController(f_pidController,f_kp,f_ki,f_kd,f_kiz,f_kff,f_kMaxOutput,f_kMinOutput);
 		
 		this.limelight = NetworkTableInstance.getDefault().getTable("limelight");
-	*/}
 
-	
-	//double estimateDistance()
+		this.shooterServo1=new Servo(shooterServo1Port);
+		this.shooterServo2=new Servo(shooterServo2Port);
 
+		shifter=new DoubleSolenoid(shifterPort1,shifterPort2);
+	}
 	void setUpPIDController(CANPIDController pidController, double kp, double ki, double kd, double kiz, double kff,
 			double kMax, double kMin) {
 		pidController.setP(kp);
@@ -121,5 +119,6 @@ public class RobotMap {
 	double getError(double A,double B){
 		return(Math.abs(A-B));
 	}
+	
 }
 	

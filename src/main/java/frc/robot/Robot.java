@@ -32,6 +32,7 @@ public class Robot extends TimedRobot {
                 shooterAngleMax=65,shooterAngleMin=30, goalDepth=29.25;
   private double shooterAngle,shooterVelocity,shooterSetPoint;
   private boolean shooterReady=false;
+  private boolean usePreSetShooterPower=false;
 
   private Timer autoTimer = new Timer();
   private Timer shootTimer = new Timer();
@@ -40,6 +41,8 @@ public class Robot extends TimedRobot {
   private boolean shootingPositionA=false;
   private boolean autoShoot=false;
   private double autoTargetPosition1=30;
+  private double servoPosition1=0,servoPosition2=0;
+  
   
   @Override
   public void robotInit() {
@@ -57,7 +60,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("dp_kff", robot.dp_kff);
 
     SmartDashboard.putNumber("autoTargetPosition1",autoTargetPosition1);
-    /*
+    
     // display PID coefficients on SmartDashboard
     SmartDashboard.putNumber("s_kp", robot.s_kp);
     SmartDashboard.putNumber("s_ki", robot.s_ki);
@@ -105,7 +108,8 @@ public class Robot extends TimedRobot {
     //auto
     SmartDashboard.putNumber("autoEndTime", autoEndTime);
     SmartDashboard.putBoolean("autoShoot", autoShoot);
-    */
+    //Boolean setUp
+    SmartDashboard.putBoolean("usePreSetShooterPower", usePreSetShooterPower);
 
   }
     //this.zero = 2162;
@@ -133,12 +137,12 @@ public class Robot extends TimedRobot {
     robot.setUpPIDController(robot.rightdrive_pidController, SmartDashboard.getNumber("dp_kp", robot.dp_kp), 
       SmartDashboard.getNumber("dp_ki", robot.dp_ki),SmartDashboard.getNumber("dp_kd", robot.dp_kd),
       SmartDashboard.getNumber("dp_kiz", robot.dp_kiz),SmartDashboard.getNumber("dp_kff", robot.dp_kff),
-      1, -1);
+      0.8, -0.8);
 
     robot.setUpPIDController(robot.leftdrive_pidController, SmartDashboard.getNumber("dp_kp", robot.dp_kp), 
       SmartDashboard.getNumber("dp_ki", robot.dp_ki),SmartDashboard.getNumber("dp_kd", robot.dp_kd),
       SmartDashboard.getNumber("dp_kiz", robot.dp_kiz),SmartDashboard.getNumber("dp_kff", robot.dp_kff),
-      1, -1);
+      0.8, -0.8);
     
     this.feedSpeed=SmartDashboard.getNumber("feedSpeed", feedSpeed);
     this.feedRatio=SmartDashboard.getNumber("feedRatio", feedRatio);
@@ -177,6 +181,7 @@ public class Robot extends TimedRobot {
     firstTimeIndicator1=true;
 
     autoTargetPosition1=SmartDashboard.getNumber("autoTargetPosition1", autoTargetPosition1);
+    usePreSetShooterPower=SmartDashboard.getBoolean("usePreSetShooterPower", usePreSetShooterPower);
 
     //trajectory
     /*
@@ -326,19 +331,8 @@ public class Robot extends TimedRobot {
     ty_Pid.setOutputLimits(0.4);
 
     robot.s_iAccum=SmartDashboard.getNumber("s_iAccum", robot.s_iAccum);
-    //robot.s_pidController.setIMaxAccum(robot.s_iAccum, 0);
-
-    
-    /*
-    this.robot.leftDrive.config_kP(0, this.DTkP);
-		this.robot.leftDrive.config_kI(0, this.DTkI);
-		this.robot.leftDrive.config_kD(0, this.DTkD);
-		this.robot.leftDrive.config_kF(0, this.LDTkF);
-		this.robot.rightDrive.config_kP(0, this.DTkP);
-		this.robot.rightDrive.config_kI(0, this.DTkI);
-		this.robot.rightDrive.config_kD(0, this.DTkD);
-    this.robot.rightDrive.config_kF(0, this.RDTkF);
-    */
+    usePreSetShooterPower=SmartDashboard.getBoolean("usePreSetShooterPower", usePreSetShooterPower);
+    robot.s_pidController.setIMaxAccum(robot.s_iAccum, 0);
 
     NetworkTableInstance.getDefault().getTable("limelight").getEntry("pipeline").setNumber(0);
     shooterReady=false;
@@ -379,11 +373,21 @@ public class Robot extends TimedRobot {
         shooterReady=false;
       }
       if(shooterReady){
-        //this.robot.f_pidController.setReference(feedSpeed*feedRatio,ControlType.kVelocity);
+        this.robot.f_pidController.setReference(feedSpeed*feedRatio,ControlType.kVelocity);
       }
-      /*if(this.robot.driver.getBButton()){
+      if(this.robot.driver.getBButton()){
         this.robot.r_pidController.setReference(feedSpeed*.5,ControlType.kVelocity);
-        this.robot.s_pidController.setReference(-robot.s_maxRPM*this.shooterPower, ControlType.kVelocity);
+        if (usePreSetShooterPower){
+          this.robot.s_pidController.setReference(-robot.s_maxRPM*this.shooterPower, ControlType.kVelocity);
+          if(Math.abs(-robot.s_encoder.getVelocity()-robot.s_maxRPM*this.shooterPower) < 250){
+            shooterReady=true;
+          }
+        }else{
+          this.robot.s_pidController.setReference(-shooterSetPoint, ControlType.kVelocity);
+          if(Math.abs(-robot.s_encoder.getVelocity()-shooterSetPoint) < 250){
+            shooterReady=true;
+          }
+        }
         if(Math.abs(-robot.s_encoder.getVelocity()-robot.s_maxRPM*this.shooterPower) < 250){
           shooterReady=true;
         }
@@ -391,7 +395,7 @@ public class Robot extends TimedRobot {
         this.robot.f_pidController.setReference(0, ControlType.kVelocity);
         this.robot.r_pidController.setReference(0, ControlType.kVelocity);
         this.robot.s_pidController.setReference(0, ControlType.kVelocity);
-      }*/
+      }
       /*
       if (this.robot.driver.getAButton()){
         this.robot.f_pidController.setReference(feedSpeed*feedRatio,ControlType.kVelocity);
@@ -449,16 +453,16 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("ProcessVariable", s_encoder.getVelocity());
     */
 
-    /*double tv = robot.limelight.getEntry("tv").getDouble(0);
+    double tv = robot.limelight.getEntry("tv").getDouble(0);
 		double tx = robot.limelight.getEntry("tx").getDouble(0);
 		double ty = robot.limelight.getEntry("ty").getDouble(0);
     double ta = robot.limelight.getEntry("ta").getDouble(0);
     double distance=(visionCenterHeight-cameraHeight)/Math.tan(Math.toRadians(cameraAngle+ty))*distanceModifier;
     double visionTurnPower=tx_Pid.getOutput(tx);
-    double visionMovePower=ty_Pid.getOutput(distance);*/
+    double visionMovePower=ty_Pid.getOutput(distance);
     
 
-    /*SmartDashboard.putNumber("tv", tv);
+    SmartDashboard.putNumber("tv", tv);
     SmartDashboard.putNumber("ta", ta);
     SmartDashboard.putNumber("tx", tx);
     SmartDashboard.putNumber("ty", ty);
@@ -466,35 +470,48 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("visionMovePower", visionMovePower);
     SmartDashboard.putNumber("targetDistance", targetDistance);
     SmartDashboard.putNumber("distance", distance);
-    if(robot.driver.getXButton()&&tv==1){
-      this.robot.leftDrive.set(visionTurnPower);
-      this.robot.rightDrive.set(-visionTurnPower);*/
-    /*} else if (robot.driver.getXButton()&&tv==1){
-      this.robot.leftDrive.set(ControlMode.PercentOutput, -visionMovePower);
-      this.robot.rightDrive.set(ControlMode.PercentOutput, -visionMovePower);
+    if (robot.driver.getXButton()&&tv==1){
+      this.robot.leftdrive_pidController.setReference(robot.dv_maxRPM*visionTurnPower, ControlType.kVelocity);
+      this.robot.rightdrive_pidController.setReference(robot.dv_maxRPM*-visionTurnPower, ControlType.kVelocity);
+
     }else if (robot.driver.getYButton()&&tv==1){
-      this.robot.leftDrive.set(ControlMode.PercentOutput, -visionMovePower+visionTurnPower);
-      this.robot.rightDrive.set(ControlMode.PercentOutput, -visionMovePower-visionTurnPower);
-    }*/
+      this.robot.leftdrive_pidController.setReference(robot.dv_maxRPM*(visionMovePower+visionTurnPower), ControlType.kVelocity);
+      this.robot.rightdrive_pidController.setReference(robot.dv_maxRPM*(visionMovePower-visionTurnPower), ControlType.kVelocity);
+    }
     this.robot.leftdrive_pidController.setReference((forward+turn) * robot.dv_maxRPM*0.5, ControlType.kVelocity);
     this.robot.rightdrive_pidController.setReference((forward-turn) * robot.dv_maxRPM*0.5, ControlType.kVelocity);
     SmartDashboard.putNumber("left Setpoint", (forward+turn) * robot.dv_maxRPM);
     SmartDashboard.putNumber("right Setpoint", (forward-turn) * robot.dv_maxRPM);
-    /*
+    
     if(robot.driver.getXButtonPressed()){
         tx_Pid.reset();
         ty_Pid.reset();
       }
       shooterAngle=Math.tanh(2*(goalHeight-shooterHeight)/(distance+goalDepth));
-      shooterVelocity=Math.sqrt(g*(goalDepth+distance)*Math.cos(shooterAngle));
-      shooterSetPoint=42*shooterVelocity/(2*Math.PI);
+      if(Math.toDegrees(shooterAngle)<shooterAngleMin){
+        shooterAngle=shooterAngleMin;
+        shooterVelocity=Math.sqrt(1/(Math.cos(shooterAngleMin)/(-1/2*g)*((goalHeight-shooterHeight)-Math.tan(shooterAngleMin)*distance)));
+      }else if(Math.toDegrees(shooterAngle)>shooterAngleMax){
+        shooterAngle=shooterAngleMax;
+        shooterVelocity=Math.sqrt(1/(Math.cos(shooterAngleMax)/(-1/2*g)*((goalHeight-shooterHeight)-Math.tan(shooterAngleMax)*distance)));
+      }else{
+        shooterVelocity=Math.sqrt(g*(goalDepth+distance)*Math.cos(shooterAngle));
+      }
+      shooterSetPoint=60*shooterVelocity/(2*Math.PI);
+      
       SmartDashboard.putNumber("shooterAngle",Math.toDegrees(shooterAngle));
       SmartDashboard.putNumber("shooterVelocity", shooterVelocity);
       SmartDashboard.putNumber("shooterSetPoint", shooterSetPoint);
-      SmartDashboard.putBoolean("shooterReady", shooterReady);*/
+      SmartDashboard.putBoolean("shooterReady", shooterReady);
       //SmartDashboard.putNumber("shooterReadyNumber", Math.abs(-robot.s_encoder.getVelocity()-robot.s_maxRPM*this.shooterPower));
       SmartDashboard.putNumber("leftEncoder", this.robot.leftdrive_pidController_encoder.getPosition());
       SmartDashboard.putNumber("rightEncoder", this.robot.rightdrive_pidController_encoder.getPosition());
+  }
+  @Override
+  public void testInit() {
+    this.teleopInit();
+    SmartDashboard.putNumber("servoPosition1", servoPosition1);
+    SmartDashboard.putNumber("servoPosition2", servoPosition2);
   }
 
   /**
@@ -502,7 +519,13 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void testPeriodic() {
+    servoPosition1=SmartDashboard.getNumber("servoPosition1", servoPosition1);
+    servoPosition2=SmartDashboard.getNumber("servoPosition2", servoPosition2);
+    robot.shooterServo1.setPosition(servoPosition1);
+    robot.shooterServo2.setPosition(servoPosition2);
+
   }
+
 
   private double getError(double A,double B){
 		return(Math.abs(A-B));
