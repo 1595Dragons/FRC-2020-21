@@ -7,7 +7,7 @@ import com.revrobotics.CANEncoder;
 import com.revrobotics.CANPIDController;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
-import com.kauailabs.navx.frc.AHRS;
+//import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.networktables.NetworkTable;
@@ -37,23 +37,23 @@ public class RobotMap {
 	public CANEncoder leftdrive_pidController_encoder;
 	public Servo shooterServo1, shooterServo2;
 	public DoubleSolenoid shifter, pto, intakeExtention;
-	public AHRS ahrs;
+	//public AHRS ahrs;
 
 
 	public CANPIDController rightdrive_pidController;
 	public CANEncoder rightdrive_pidController_encoder;
 	private static final int shooter1Port = 5, shooter2Port = 8,feederPort =7,revolverPort =9, intakerPort =6,
 						leftDrive1Port = 1, leftDrive2Port = 2, rightDrive1Port = 3, rightDrive2Port = 4;
-	private static final int shooterServo1Port=1,shooterServo2Port=2, shifterPort1=3,shifterPort2=4,
-						ptoPort1=5,ptoPort2=6,intakeExtentionPort1=7,intakeExtentionPort2=8;
+	private static final int shooterServo1Port=1,shooterServo2Port=2, shifterPort1=2,shifterPort2=3,
+						ptoPort1=4,ptoPort2=5,intakeExtentionPort1=0,intakeExtentionPort2=1;
 	
 	public double gearRatioLow=14.88,gearRatioHigh=6.55;
 	public double wheelRotationToInch=Math.PI*6;
 	
 	public double kP, kI, kD, kIz, kFF, kMaxOutput, kMinOutput, maxRPM;
-	public double dv_kp=.0001, dv_ki=.000002, dv_kd=.000001, dv_kiz=500, dv_kff=.000175, dv_maxRPM=5700;
+	public double dv_kp=.000005, dv_ki=.0000005, dv_kd=.000001, dv_kiz=500, dv_kff=.000175, dv_maxRPM=5700;
 	public double dp_kp=.0018, dp_ki=.000002, dp_kd=.000001, dp_kiz=500, dp_kff=.000175, dp_maxRPM=5700; 
-	public double s_kp=0.000050,s_ki=0.0000001,s_kd=0,s_kiz=200,s_kff=0.000175,s_kMaxOutput=0,s_kMinOutput=-1,s_maxRPM=5700, s_iAccum=0;
+	public double s_kp=0.00010,s_ki=0.0000001,s_kd=0,s_kiz=400,s_kff=0.000175,s_kMaxOutput=0,s_kMinOutput=-1,s_maxRPM=5700, s_iAccum=0;
 	public double f_kp=0.00015,f_ki=0.000001,f_kd=0,f_kiz=2000,f_kff=0,f_kMaxOutput=1,f_kMinOutput=-1,f_maxRPM=5700;
 	public double r_kp=0.00025,r_ki=0.000001,r_kd=0,r_kiz=2000,r_kff=0,r_kMaxOutput=1,r_kMinOutput=-1,r_maxRPM=5700;
 
@@ -71,16 +71,14 @@ public class RobotMap {
 		
 		this.shooter1=new CANSparkMax(shooter1Port, MotorType.kBrushless);
 		this.shooter2=new CANSparkMax(shooter2Port, MotorType.kBrushless);
-		this.feeder=new CANSparkMax(feederPort, MotorType.kBrushless);
+		this.feeder=new CANSpa+++++655\+rkMax(feederPort, MotorType.kBrushless);
 		this.revolver=new CANSparkMax(revolverPort, MotorType.kBrushless);
+		//this.intaker=new CANSparkMax
 
 		this.leftDrive2.follow(this.leftDrive);
 		this.rightDrive2.follow(this.rightDrive);
-		this.shooter2.follow(this.shooter1);
-		this.leftDrive.setInverted(false);
-		this.leftDrive2.setInverted(false);
+		this.shooter2.follow(this.shooter1, true);
 		this.rightDrive.setInverted(true);
-		this.rightDrive2.setInverted(true);
 
 
 		rightdrive_pidController=rightDrive.getPIDController();
@@ -115,7 +113,7 @@ public class RobotMap {
 		shifter=new DoubleSolenoid(shifterPort1,shifterPort2);
 		pto=new DoubleSolenoid(ptoPort1,ptoPort2);
 		intakeExtention=new DoubleSolenoid(intakeExtentionPort1,intakeExtentionPort2);
-		new AHRS(SPI.Port.kMXP);
+		//new AHRS(SPI.Port.kMXP);
 	}
 	void setUpPIDController(CANPIDController pidController, double kp, double ki, double kd, double kiz, double kff,
 			double kMax, double kMin) {
