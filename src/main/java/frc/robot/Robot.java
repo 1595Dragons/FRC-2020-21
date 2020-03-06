@@ -413,6 +413,9 @@ public class Robot extends TimedRobot {
         this.robot.r_pidController.setReference(1000, ControlType.kVelocity);
         this.robot.s_pidController.setReference(0, ControlType.kVelocity);
       }
+      double intakerPower=0;
+      intakerPower=robot.operator.getTriggerAxis(Hand.kLeft)-robot.operator.getTriggerAxis(Hand.kRight);
+      robot.intaker.set(intakerPower);
       
       /*
       if (this.robot.driver.getAButton()){
