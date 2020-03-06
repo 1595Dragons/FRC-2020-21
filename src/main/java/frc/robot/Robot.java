@@ -3,6 +3,7 @@ package frc.robot;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import jaci.pathfinder.Pathfinder;
 import jaci.pathfinder.Trajectory;
@@ -19,10 +20,12 @@ public class Robot extends TimedRobot {
   private RobotMap robot = new RobotMap();
   private double feedSpeed=2000,feedRatio=1.8, shooterPower = .74;
   private double tx_kp=0.01,tx_ki=0.005,tx_kd=0.06,tx_iMax=0.06,
-                ty_kp=0.016,ty_ki=0.0001,ty_kd=0;
+                ty_kp=0.016,ty_ki=0.0001,ty_kd=0,
+                ahrs_kp=0.0002,ahrs_ki=0.000001,ahrs_kd=0.000001;
   private double txShoot=0,tyShoot=0,taShoot=0.1;
   private MiniPID tx_Pid=new MiniPID(tx_kp, tx_ki, tx_kd);
   private MiniPID ty_Pid=new MiniPID(ty_kp,ty_ki,ty_kd);
+  private MiniPID ahrs_Pid=new MiniPID(ahrs_kp,ahrs_ki,ahrs_kd);
   private double visionCenterHeight=89.4;//should be 89.75 base on official guild
   private double cameraHeight=6.6,cameraAngle=31;
   private double distanceModifier=1.115,targetDistance=120;
@@ -102,6 +105,10 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("ty_kp", ty_kp);
     SmartDashboard.putNumber("ty_ki", ty_ki);
     SmartDashboard.putNumber("ty_kd", ty_kd);
+
+    SmartDashboard.putNumber("ahrs_kp", ahrs_kp);
+    SmartDashboard.putNumber("ahrs_ki", ahrs_ki);
+    SmartDashboard.putNumber("ahrs_kd", ahrs_kd);
     
     
     
@@ -170,6 +177,13 @@ public class Robot extends TimedRobot {
     ty_Pid.setSetpoint(targetDistance);
     ty_Pid.setOutputLimits(0.4);
 
+    ahrs_kp=SmartDashboard.getNumber("ahrs_kp", ahrs_kp);
+    ahrs_ki=SmartDashboard.getNumber("ahrs_ki", ahrs_ki);
+    ahrs_kd=SmartDashboard.getNumber("ahrs_kd", ahrs_kd);
+    ahrs_Pid.reset();
+    ahrs_Pid.setPID(ahrs_kp, ahrs_ki, ahrs_kd);
+    ahrs_Pid.setOutputLimits(0.5);
+
     robot.s_iAccum=SmartDashboard.getNumber("s_iAccum", robot.s_iAccum);
     //robot.s_pidController.setIMaxAccum(robot.s_iAccum, 0);
     NetworkTableInstance.getDefault().getTable("limelight").getEntry("pipeline").setNumber(0);
@@ -182,7 +196,6 @@ public class Robot extends TimedRobot {
 
     autoTargetPosition1=SmartDashboard.getNumber("autoTargetPosition1", autoTargetPosition1);
     usePreSetShooterPower=SmartDashboard.getBoolean("usePreSetShooterPower", usePreSetShooterPower);
-
     //trajectory
     /*
     Trajectory.Config config = new Trajectory.Config(Trajectory.FitMethod.HERMITE_CUBIC, Trajectory.Config.SAMPLES_HIGH, 0.05, 1.7, 2.0, 60.0);
@@ -217,7 +230,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousPeriodic() {
-    /*
+    
     double tv = robot.limelight.getEntry("tv").getDouble(0);
 		double tx = robot.limelight.getEntry("tx").getDouble(0);
 		double ty = robot.limelight.getEntry("ty").getDouble(0);
@@ -233,7 +246,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("visionMovePower", visionMovePower);
     SmartDashboard.putNumber("targetDistance", targetDistance);
     SmartDashboard.putNumber("distance", distance);
-    */
+             
     robot.leftdrive_pidController.setReference(autoTargetPosition1, ControlType.kPosition);
     robot.rightdrive_pidController.setReference(autoTargetPosition1, ControlType.kPosition);
     SmartDashboard.putNumber("leftEncoder", this.robot.leftdrive_pidController_encoder.getPosition());
@@ -281,7 +294,7 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopInit() {
     // Drive train PID
-    /*robot.setUpPIDController(robot.s_pidController, SmartDashboard.getNumber("s_kp", robot.s_kp), 
+    robot.setUpPIDController(robot.s_pidController, SmartDashboard.getNumber("s_kp", robot.s_kp), 
         SmartDashboard.getNumber("s_ki", robot.s_ki),SmartDashboard.getNumber("s_kd", robot.s_kd),
         SmartDashboard.getNumber("s_kiz", robot.s_kiz),SmartDashboard.getNumber("s_kff", robot.s_kff),
         SmartDashboard.getNumber("s_kMaxOutput", robot.s_kMaxOutput),SmartDashboard.getNumber("s_kMinOutput", robot.s_kMinOutput));
@@ -293,7 +306,8 @@ public class Robot extends TimedRobot {
         SmartDashboard.getNumber("r_ki", robot.r_ki),SmartDashboard.getNumber("r_kd", robot.r_kd),
         SmartDashboard.getNumber("r_kiz", robot.r_kiz),SmartDashboard.getNumber("r_kff", robot.r_kff),
         SmartDashboard.getNumber("r_kMaxOutput", robot.r_kMaxOutput),SmartDashboard.getNumber("r_kMinOutput", robot.r_kMinOutput));
-    */
+    
+        
     robot.setUpPIDController(robot.rightdrive_pidController, SmartDashboard.getNumber("dv_kp", robot.dv_kp), 
         SmartDashboard.getNumber("dv_ki", robot.dv_ki),SmartDashboard.getNumber("dv_kd", robot.dv_kd),
         SmartDashboard.getNumber("dv_kiz", robot.dv_kiz),SmartDashboard.getNumber("dv_kff", robot.dv_kff),
@@ -477,6 +491,15 @@ public class Robot extends TimedRobot {
     }else if (robot.driver.getYButton()&&tv==1){
       this.robot.leftdrive_pidController.setReference(robot.dv_maxRPM*(visionMovePower+visionTurnPower), ControlType.kVelocity);
       this.robot.rightdrive_pidController.setReference(robot.dv_maxRPM*(visionMovePower-visionTurnPower), ControlType.kVelocity);
+    }
+    if (Math.abs(forward+turn)<0.5||Math.abs(forward-turn)<0.5){
+      //Low gear
+      robot.shifter.set(Value.kForward);
+      SmartDashboard.putString("gear", "Low");
+    }else if(Math.abs(forward+turn)>0.8||Math.abs(forward-turn)>0.8){
+      //High gear
+      robot.shifter.set(Value.kReverse);
+      SmartDashboard.putString("gear", "High");
     }
     this.robot.leftdrive_pidController.setReference((forward+turn) * robot.dv_maxRPM*0.5, ControlType.kVelocity);
     this.robot.rightdrive_pidController.setReference((forward-turn) * robot.dv_maxRPM*0.5, ControlType.kVelocity);

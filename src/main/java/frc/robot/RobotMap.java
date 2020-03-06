@@ -7,6 +7,7 @@ import com.revrobotics.CANEncoder;
 import com.revrobotics.CANPIDController;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.networktables.NetworkTable;
@@ -15,6 +16,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.Servo;
+import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -23,7 +25,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 public class RobotMap {
 
 	
-	public CANSparkMax leftDrive, rightDrive, leftDrive2, rightDrive2, shooter1,shooter2,feeder,revolver;
+	public CANSparkMax leftDrive, rightDrive, leftDrive2, rightDrive2, shooter1,shooter2,feeder,revolver,intaker;
 	public CANPIDController s_pidController;
 	public CANPIDController f_pidController;
 	public CANPIDController r_pidController;
@@ -34,12 +36,16 @@ public class RobotMap {
 	public CANPIDController leftdrive_pidController;
 	public CANEncoder leftdrive_pidController_encoder;
 	public Servo shooterServo1, shooterServo2;
-	public DoubleSolenoid shifter;
+	public DoubleSolenoid shifter, pto, intakeExtention;
+	public AHRS ahrs;
+
 
 	public CANPIDController rightdrive_pidController;
 	public CANEncoder rightdrive_pidController_encoder;
-	private static final int shooter1ID = 9, shooter2ID = 7,feederID=10,revolverID=8, leftDrive1Port = 1, leftDrive2Port = 2, rightDrive1Port = 3, rightDrive2Port = 4;
-	private static final int shooterServo1Port=1,shooterServo2Port=2, shifterPort1=3,shifterPort2=4;
+	private static final int shooter1Port = 5, shooter2Port = 8,feederPort =7,revolverPort =9, intakerPort =6,
+						leftDrive1Port = 1, leftDrive2Port = 2, rightDrive1Port = 3, rightDrive2Port = 4;
+	private static final int shooterServo1Port=1,shooterServo2Port=2, shifterPort1=3,shifterPort2=4,
+						ptoPort1=5,ptoPort2=6,intakeExtentionPort1=7,intakeExtentionPort2=8;
 	
 	public double gearRatioLow=14.88,gearRatioHigh=6.55;
 	public double wheelRotationToInch=Math.PI*6;
@@ -63,10 +69,10 @@ public class RobotMap {
 		this.rightDrive = new CANSparkMax(rightDrive1Port, MotorType.kBrushless);
 		this.rightDrive2 = new CANSparkMax(rightDrive2Port, MotorType.kBrushless);
 		
-		this.shooter1=new CANSparkMax(shooter1ID, MotorType.kBrushless);
-		this.shooter2=new CANSparkMax(shooter2ID, MotorType.kBrushless);
-		this.feeder=new CANSparkMax(feederID, MotorType.kBrushless);
-		this.revolver=new CANSparkMax(revolverID, MotorType.kBrushless);
+		this.shooter1=new CANSparkMax(shooter1Port, MotorType.kBrushless);
+		this.shooter2=new CANSparkMax(shooter2Port, MotorType.kBrushless);
+		this.feeder=new CANSparkMax(feederPort, MotorType.kBrushless);
+		this.revolver=new CANSparkMax(revolverPort, MotorType.kBrushless);
 
 		this.leftDrive2.follow(this.leftDrive);
 		this.rightDrive2.follow(this.rightDrive);
@@ -104,8 +110,12 @@ public class RobotMap {
 
 		this.shooterServo1=new Servo(shooterServo1Port);
 		this.shooterServo2=new Servo(shooterServo2Port);
+		
 
 		shifter=new DoubleSolenoid(shifterPort1,shifterPort2);
+		pto=new DoubleSolenoid(ptoPort1,ptoPort2);
+		intakeExtention=new DoubleSolenoid(intakeExtentionPort1,intakeExtentionPort2);
+		new AHRS(SPI.Port.kMXP);
 	}
 	void setUpPIDController(CANPIDController pidController, double kp, double ki, double kd, double kiz, double kff,
 			double kMax, double kMin) {
