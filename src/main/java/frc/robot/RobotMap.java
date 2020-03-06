@@ -73,7 +73,7 @@ public class RobotMap {
 		this.shooter2=new CANSparkMax(shooter2Port, MotorType.kBrushless);
 		this.feeder=new CANSparkMax(feederPort, MotorType.kBrushless);
 		this.revolver=new CANSparkMax(revolverPort, MotorType.kBrushless);
-		this.intaker=new CANSparkMax(intakerPort,MotorType.kBrushless);
+		//this.intaker=new CANSparkMax(intakerPort,MotorType.kBrushless);
 
 		this.leftDrive2.follow(this.leftDrive);
 		this.rightDrive2.follow(this.rightDrive);

@@ -408,14 +408,21 @@ public class Robot extends TimedRobot {
         if(Math.abs(-robot.s_encoder.getVelocity()-robot.s_maxRPM*this.shooterPower) < 250){
           shooterReady=true;
         }
-      }else{
+      }else if(!this.robot.operator.getAButton()){
         this.robot.f_pidController.setReference(0, ControlType.kVelocity);
         this.robot.r_pidController.setReference(1000, ControlType.kVelocity);
         this.robot.s_pidController.setReference(0, ControlType.kVelocity);
       }
+      else{
+        this.robot.f_pidController.setReference(0, ControlType.kVelocity);
+        this.robot.r_pidController.setReference(-1000, ControlType.kVelocity);
+        this.robot.s_pidController.setReference(0, ControlType.kVelocity);
+      }
+      /*
       double intakerPower=0;
       intakerPower=robot.operator.getTriggerAxis(Hand.kLeft)-robot.operator.getTriggerAxis(Hand.kRight);
       robot.intaker.set(intakerPower);
+      */
       
       /*
       if (this.robot.driver.getAButton()){
@@ -526,6 +533,16 @@ public class Robot extends TimedRobot {
     else{
       //rightPow = -Math.pow(rightPow, 2);
     }
+    //double intakeExtendPower=0;
+    if (robot.operator.getBumper(Hand.kLeft)){
+      robot.intakeExtention.set(Value.kReverse);
+    }
+    if (robot.operator.getBumper(Hand.kRight)){
+      robot.intakeExtention.set(Value.kForward);
+    }
+
+    
+
     
     SmartDashboard.putNumber("left Setpoint", (forward+turn) * robot.dv_maxRPM);
     SmartDashboard.putNumber("right Setpoint", (forward-turn) * robot.dv_maxRPM);
