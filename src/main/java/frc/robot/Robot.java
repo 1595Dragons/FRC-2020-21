@@ -16,9 +16,8 @@ import com.revrobotics.ControlType;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
 
 public class Robot extends TimedRobot {
-  //private Joystick s_stick;
   private RobotMap robot = new RobotMap();
-  private double feedSpeed=2500,feedRatio=1.9, shooterPower = .7;//.7;
+  private double feedSpeed=2500,feedRatio=2, shooterPower = .7;//.7;
   private double tx_kp=0.01,tx_ki=0.00001,tx_kd=0.06,tx_iMax=0.06,
                 ty_kp=0.016,ty_ki=0.0001,ty_kd=0,
                 ahrs_kp=0.0002,ahrs_ki=0.000001,ahrs_kd=0.000001;
@@ -30,7 +29,6 @@ public class Robot extends TimedRobot {
   private double cameraHeight=6.6,cameraAngle=31;
   private double distanceModifier=1.115,targetDistance=120;
 
-  //private Timer shootingTimerAlec;
 
   //shooter math
   private double shooterHeight=20,g=386.2, goalHeight=98.25, 
@@ -39,8 +37,7 @@ public class Robot extends TimedRobot {
   private boolean shooterReady=false;
   private boolean usePreSetShooterPower=true;
 
-  private Timer autoTimer = new Timer();
-  private Timer shootTimer = new Timer();
+  public Timer autoTimer = new Timer();
   private boolean firstTimeIndicator1=true;
   private double autoEndTime=3;
   private boolean shootingPositionA=false;
@@ -121,14 +118,14 @@ public class Robot extends TimedRobot {
     SmartDashboard.putBoolean("usePreSetShooterPower", usePreSetShooterPower);
 
   }
-    //this.zero = 2162;
   /**
    * This function is run once each time the robot enters autonomous mode.
    */
   @Override
   public void autonomousInit() {
+    autoTimer.start();
+    
     shooterReady=false;
-    //shootingTimerAlec.start();
     robot.setUpPIDController(robot.s_pidController, SmartDashboard.getNumber("s_kp", robot.s_kp), 
         SmartDashboard.getNumber("s_ki", robot.s_ki),SmartDashboard.getNumber("s_kd", robot.s_kd),
         SmartDashboard.getNumber("s_kiz", robot.s_kiz),SmartDashboard.getNumber("s_kff", robot.s_kff),
@@ -189,7 +186,6 @@ public class Robot extends TimedRobot {
     ahrs_Pid.setOutputLimits(0.5);
 
     robot.s_iAccum=SmartDashboard.getNumber("s_iAccum", robot.s_iAccum);
-    //robot.s_pidController.setIMaxAccum(robot.s_iAccum, 0);
     NetworkTableInstance.getDefault().getTable("limelight").getEntry("pipeline").setNumber(0);
     autoTimer.reset();
     autoTimer.start();
@@ -392,8 +388,6 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void teleopPeriodic() {
-      //SmartDashboard.putNumber("Revolver setpoint", this.robot.shooter1.getOutputCurrent());
-
       // Calculate drive power
       double forward;
       if(Math.abs(this.robot.driver.getY(Hand.kLeft)) > .075){
@@ -444,7 +438,6 @@ public class Robot extends TimedRobot {
         this.robot.s_pidController.setReference(0, ControlType.kVelocity);
       }
       if(!this.robot.operator.getBButton() && !this.robot.operator.getAButton()){
-        //this.robot.f_pidController.setReference(0, ControlType.kVelocity);
         this.robot.r_pidController.setReference(800 - 800 * this.robot.operator.getY(Hand.kLeft), ControlType.kVelocity);
       }
       if(this.robot.operator.getAButton() && !this.robot.operator.getBButton()){
@@ -452,8 +445,6 @@ public class Robot extends TimedRobot {
       }
       if(this.robot.operator.getXButton() && !this.robot.operator.getBButton()){
         this.robot.f_pidController.setReference(200, ControlType.kVelocity);
-        //this.robot.r_pidController.setReference(-1000, ControlType.kVelocity);
-        //this.robot.s_pidController.setReference(0, ControlType.kVelocity);
       }
       else if(!this.robot.operator.getBButton()){
         this.robot.f_pidController.setReference(0, ControlType.kVelocity);
@@ -463,36 +454,9 @@ public class Robot extends TimedRobot {
       intakerPower=robot.operator.getTriggerAxis(Hand.kLeft)-robot.operator.getTriggerAxis(Hand.kRight);
       robot.intaker.set(intakerPower);
       */
-      
-      /*
-      if (this.robot.driver.getAButton()){
-        this.robot.f_pidController.setReference(feedSpeed*feedRatio,ControlType.kVelocity);
-      }else{
-        this.robot.f_pidController.setReference(0, ControlType.kVelocity);
-      }
-      if(this.robot.driver.getYButton()){
-        this.robot.r_pidController.setReference(feedSpeed*.5,ControlType.kVelocity);
-      }else{
-        this.robot.r_pidController.setReference(0, ControlType.kVelocity);
-      }
-      this.robot.s_pidController.setReference(-robot.s_maxRPM*this.robot.driver.getTriggerAxis(Hand.kLeft)*this.shooterPower, ControlType.kVelocity);
-      */
       SmartDashboard.putNumber("Feeder RPM", this.robot.f_encoder.getVelocity());
       SmartDashboard.putNumber("Shooter RPM", this.robot.s_encoder.getVelocity());
       SmartDashboard.putNumber("Revolver RPM", this.robot.r_encoder.getVelocity());
-      
-      /*
-      if (this.robot.driver.getBumper(Hand.kLeft)) {
-				this.robot.leftDrive.set(ControlMode.Velocity, (forward - turn) * this.maxVelDT);
-				this.robot.rightDrive.set(ControlMode.Velocity, (forward + turn) * this.maxVelDT);
-			} else if (this.robot.driver.getBumper(Hand.kRight)) {
-				this.robot.leftDrive.set(ControlMode.Velocity, (forward - turn * .5) * .4 * this.maxVelDT);
-				this.robot.rightDrive.set(ControlMode.Velocity, (forward + turn * .5) * .4 * this.maxVelDT);
-			} else {
-				this.robot.leftDrive.set(ControlMode.Velocity, (forward - turn) * .4 * this.maxVelDT);
-				this.robot.rightDrive.set(ControlMode.Velocity, (forward + turn) * .4 * this.maxVelDT);
-      }
-      */
 
    
 
@@ -511,16 +475,6 @@ public class Robot extends TimedRobot {
      *  com.revrobotics.ControlType.kVoltage
      */
     
-    
-    /*
-    double setPoint = -1*maxRPM;
-    s_pidController.setReference(setPoint, ControlType.kVelocity);
-    SmartDashboard.putNumber("Output", s_motor.getAppliedOutput());
-    //s_motor.set(-.5);
-    SmartDashboard.putNumber("SetPoint", setPoint);
-    SmartDashboard.putNumber("ProcessVariable", s_encoder.getVelocity());
-    */
-
     double tv = robot.limelight.getEntry("tv").getDouble(0);
 		double tx = robot.limelight.getEntry("tx").getDouble(0);
 		double ty = robot.limelight.getEntry("ty").getDouble(0);
@@ -542,8 +496,8 @@ public class Robot extends TimedRobot {
     double rightPow = (forward-turn) * robot.dv_maxRPM*0.85;
     if (robot.driver.getXButton()&&tv==1){
       //just changed the direction at 2:48
-      this.robot.leftdrive_pidController.setReference(robot.dv_maxRPM*-visionTurnPower, ControlType.kVelocity);
-      this.robot.rightdrive_pidController.setReference(robot.dv_maxRPM*visionTurnPower, ControlType.kVelocity);
+      this.robot.leftdrive_pidController.setReference(robot.dv_maxRPM*-visionTurnPower + leftPow, ControlType.kVelocity);
+      this.robot.rightdrive_pidController.setReference(robot.dv_maxRPM*visionTurnPower + rightPow, ControlType.kVelocity);
 
     }else if (robot.driver.getYButton()&&tv==1){
       this.robot.leftdrive_pidController.setReference(robot.dv_maxRPM*(visionMovePower+visionTurnPower), ControlType.kVelocity);
@@ -574,7 +528,6 @@ public class Robot extends TimedRobot {
     else{
       //rightPow = -Math.pow(rightPow, 2);
     }
-    //double intakeExtendPower=0;
     if (robot.operator.getBumper(Hand.kLeft)){
       robot.intakeExtention.set(Value.kReverse);
     }
