@@ -18,7 +18,7 @@ import edu.wpi.first.wpilibj.GenericHID.Hand;
 public class Robot extends TimedRobot {
   private RobotMap robot = new RobotMap();
   private double feedSpeed=2500,feedRatio=2, shooterPower = .7;//.7;
-  private double tx_kp=0.01,tx_ki=0.00001,tx_kd=0.06,tx_iMax=0.06,
+  private double tx_kp=0.02,tx_ki=0.00002,tx_kd=0,tx_iMax=0.02,
                 ty_kp=0.016,ty_ki=0.0001,ty_kd=0,
                 ahrs_kp=0.0002,ahrs_ki=0.000001,ahrs_kd=0.000001;
   private double txShoot=0,tyShoot=0,taShoot=0.1;
