@@ -18,7 +18,7 @@ import edu.wpi.first.wpilibj.GenericHID.Hand;
 public class Robot extends TimedRobot {
   //private Joystick s_stick;
   private RobotMap robot = new RobotMap();
-  private double feedSpeed=4000,feedRatio=.98, shooterPower = .70;//.74;
+  private double feedSpeed=2500,feedRatio=1.9, shooterPower = .7;//.7;
   private double tx_kp=0.01,tx_ki=0.00001,tx_kd=0.06,tx_iMax=0.06,
                 ty_kp=0.016,ty_ki=0.0001,ty_kd=0,
                 ahrs_kp=0.0002,ahrs_ki=0.000001,ahrs_kd=0.000001;
@@ -29,6 +29,8 @@ public class Robot extends TimedRobot {
   private double visionCenterHeight=89.4;//should be 89.75 base on official guild
   private double cameraHeight=6.6,cameraAngle=31;
   private double distanceModifier=1.115,targetDistance=120;
+
+  //private Timer shootingTimerAlec;
 
   //shooter math
   private double shooterHeight=20,g=386.2, goalHeight=98.25, 
@@ -42,8 +44,8 @@ public class Robot extends TimedRobot {
   private boolean firstTimeIndicator1=true;
   private double autoEndTime=3;
   private boolean shootingPositionA=false;
-  private boolean autoShoot=false;
-  private double autoTargetPosition1=30;
+  private boolean autoShoot=true;
+  private double autoTargetPosition1=20;
   private double servoPosition1=0,servoPosition2=0;
   
   
@@ -125,7 +127,9 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousInit() {
-    /*robot.setUpPIDController(robot.s_pidController, SmartDashboard.getNumber("s_kp", robot.s_kp), 
+    shooterReady=false;
+    //shootingTimerAlec.start();
+    robot.setUpPIDController(robot.s_pidController, SmartDashboard.getNumber("s_kp", robot.s_kp), 
         SmartDashboard.getNumber("s_ki", robot.s_ki),SmartDashboard.getNumber("s_kd", robot.s_kd),
         SmartDashboard.getNumber("s_kiz", robot.s_kiz),SmartDashboard.getNumber("s_kff", robot.s_kff),
         SmartDashboard.getNumber("s_kMaxOutput", robot.s_kMaxOutput),SmartDashboard.getNumber("s_kMinOutput", robot.s_kMinOutput));
@@ -136,7 +140,7 @@ public class Robot extends TimedRobot {
     robot.setUpPIDController(robot.r_pidController, SmartDashboard.getNumber("r_kp", robot.r_kp), 
         SmartDashboard.getNumber("r_ki", robot.r_ki),SmartDashboard.getNumber("r_kd", robot.r_kd),
         SmartDashboard.getNumber("r_kiz", robot.r_kiz),SmartDashboard.getNumber("r_kff", robot.r_kff),
-        SmartDashboard.getNumber("r_kMaxOutput", robot.r_kMaxOutput),SmartDashboard.getNumber("r_kMinOutput", robot.r_kMinOutput));*/
+        SmartDashboard.getNumber("r_kMaxOutput", robot.r_kMaxOutput),SmartDashboard.getNumber("r_kMinOutput", robot.r_kMinOutput));
     robot.leftdrive_pidController_encoder.setPosition(0);
     robot.rightdrive_pidController_encoder.setPosition(0);
     SmartDashboard.putNumber("leftEncoder", this.robot.leftdrive_pidController_encoder.getPosition());
@@ -188,6 +192,7 @@ public class Robot extends TimedRobot {
     //robot.s_pidController.setIMaxAccum(robot.s_iAccum, 0);
     NetworkTableInstance.getDefault().getTable("limelight").getEntry("pipeline").setNumber(0);
     autoTimer.reset();
+    autoTimer.start();
     autoEndTime=SmartDashboard.getNumber("autoEndTime", autoEndTime);
     autoShoot=SmartDashboard.getBoolean("autoShoot", autoShoot);
     shootingPositionA=false;
@@ -230,7 +235,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousPeriodic() {
-    
+    /*
     double tv = robot.limelight.getEntry("tv").getDouble(0);
 		double tx = robot.limelight.getEntry("tx").getDouble(0);
 		double ty = robot.limelight.getEntry("ty").getDouble(0);
@@ -245,46 +250,75 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("visionTurnPower", visionTurnPower);
     SmartDashboard.putNumber("visionMovePower", visionMovePower);
     SmartDashboard.putNumber("targetDistance", targetDistance);
-    SmartDashboard.putNumber("distance", distance);
-             
-    robot.leftdrive_pidController.setReference(autoTargetPosition1, ControlType.kPosition);
-    robot.rightdrive_pidController.setReference(autoTargetPosition1, ControlType.kPosition);
+    SmartDashboard.putNumber("distance", distance);*/
+        
+    //robot.leftdrive_pidController.setReference(autoTargetPosition1, ControlType.kPosition);
+    //robot.rightdrive_pidController.setReference(autoTargetPosition1, ControlType.kPosition);
+    
     SmartDashboard.putNumber("leftEncoder", this.robot.leftdrive_pidController_encoder.getPosition());
     SmartDashboard.putNumber("rightEncoder", this.robot.rightdrive_pidController_encoder.getPosition());
+
+    
+    if(shooterReady){
+      this.robot.f_pidController.setReference(-feedSpeed*feedRatio,ControlType.kVelocity);
+    }
+    else{
+      this.robot.f_pidController.setReference(0,ControlType.kVelocity);
+    }
+    this.robot.r_pidController.setReference(feedSpeed*.5,ControlType.kVelocity);
+    this.robot.s_pidController.setReference(-robot.s_maxRPM*this.shooterPower, ControlType.kVelocity);
+    if(Math.abs(-robot.s_encoder.getVelocity()-robot.s_maxRPM*this.shooterPower) < 250){//  && shootingTimerAlec.get() < 6){
+      shooterReady=true;
+    }
+    else{
+      shooterReady=false;
+    }
+
     /*
     if (shootingPositionA==false){
-      this.robot.leftDrive.set(-visionMovePower+visionTurnPower);
-      this.robot.rightDrive.set(-visionMovePower-visionTurnPower);
-      if (getError(0, tx)<0.5&&getError(targetDistance, distance)<1){
+      this.robot.leftdrive_pidController.setReference(robot.dv_maxRPM*-visionTurnPower, ControlType.kVelocity);
+      this.robot.rightdrive_pidController.setReference(robot.dv_maxRPM*visionTurnPower, ControlType.kVelocity);
+      if (getError(0, tx)<1){
         shootingPositionA=true;
         this.robot.leftDrive.set(0);
-      this.robot.rightDrive.set(0);
+        this.robot.rightDrive.set(0);
       }
-    }else if (autoShoot){
-      if (firstTimeIndicator1){
-        firstTimeIndicator1=false;
-        shootTimer.reset();
+    }else */
+    /*
+    if (autoShoot){
+      this.robot.r_pidController.setReference(feedSpeed*.5,ControlType.kVelocity);
+      this.robot.s_pidController.setReference(-robot.s_maxRPM*this.shooterPower, ControlType.kVelocity);
+      if (getError(-robot.s_encoder.getVelocity(), robot.s_maxRPM*this.shooterPower)<250){
+        shooterReady=true;
+
+      }*/
+      /*
+      if(shooterReady&&autoTimer.get()>3){
+        this.robot.f_pidController.setReference(-feedSpeed*feedRatio,ControlType.kVelocity);
       }
       */
-      /*this.robot.r_pidController.setReference(feedSpeed*.5,ControlType.kVelocity);
-      this.robot.s_pidController.setReference(-robot.s_maxRPM*this.shooterPower, ControlType.kVelocity);
-      if (getError(-robot.s_encoder.getVelocity(), robot.s_maxRPM*this.shooterPower)<200);{
-        shooterReady=true;
-      }
+
+      /*
       if(shooterReady){
-        this.robot.f_pidController.setReference(feedSpeed*feedRatio,ControlType.kVelocity);
+        Timer.delay(2.5);
+        this.robot.f_pidController.setReference(-feedSpeed*feedRatio,ControlType.kVelocity);
       }
-      while (shootTimer.get()>7){
+      if(autoTimer.get()>8){
+        shooterReady=false;
         this.robot.r_pidController.setReference(0,ControlType.kVelocity);
         this.robot.s_pidController.setReference(0, ControlType.kVelocity);
         this.robot.f_pidController.setReference(0,ControlType.kVelocity);
-      }*/
+      }
     while (autoTimer.get()>autoEndTime){
       //stop
     }
     SmartDashboard.putBoolean("shootingPositionA", shootingPositionA);
     SmartDashboard.putBoolean("shooterReady", shooterReady);
+    SmartDashboard.putNumber("shootTimer", shootTimer.get());
+    SmartDashboard.putNumber("autoTimer", autoTimer.get());
     
+    }
+    */
 
   }
 
@@ -362,14 +396,14 @@ public class Robot extends TimedRobot {
 
       // Calculate drive power
       double forward;
-      if(Math.abs(this.robot.driver.getY(Hand.kLeft)) > .005){
-        forward = -this.robot.driver.getY(Hand.kLeft) * .7;
+      if(Math.abs(this.robot.driver.getY(Hand.kLeft)) > .075){
+        forward = -this.robot.driver.getY(Hand.kLeft) * .8;
       }
       else{
         forward = 0;
       }
       double turn;
-      if(Math.abs(this.robot.driver.getX(Hand.kRight)) > .005){
+      if(Math.abs(this.robot.driver.getX(Hand.kRight)) > .075){
         turn = this.robot.driver.getX(Hand.kRight)*.6;
       }
       else{
@@ -380,9 +414,6 @@ public class Robot extends TimedRobot {
       SmartDashboard.putNumber("left drive RPM", this.robot.leftdrive_pidController_encoder.getVelocity());
       SmartDashboard.putNumber("right drive RPM", this.robot.rightdrive_pidController_encoder.getVelocity());
       
-      if(this.robot.operator.getBackButtonPressed()){
-        shooterReady=false;
-      }
       if(this.robot.operator.getBButtonReleased()){
         shooterReady=false;
       }
@@ -408,15 +439,24 @@ public class Robot extends TimedRobot {
         if(Math.abs(-robot.s_encoder.getVelocity()-robot.s_maxRPM*this.shooterPower) < 250){
           shooterReady=true;
         }
-      }else if(!this.robot.operator.getAButton()){
-        this.robot.f_pidController.setReference(0, ControlType.kVelocity);
-        this.robot.r_pidController.setReference(1000, ControlType.kVelocity);
-        this.robot.s_pidController.setReference(0, ControlType.kVelocity);
       }
       else{
-        this.robot.f_pidController.setReference(0, ControlType.kVelocity);
-        this.robot.r_pidController.setReference(-1000, ControlType.kVelocity);
         this.robot.s_pidController.setReference(0, ControlType.kVelocity);
+      }
+      if(!this.robot.operator.getBButton() && !this.robot.operator.getAButton()){
+        //this.robot.f_pidController.setReference(0, ControlType.kVelocity);
+        this.robot.r_pidController.setReference(800 - 800 * this.robot.operator.getY(Hand.kLeft), ControlType.kVelocity);
+      }
+      if(this.robot.operator.getAButton() && !this.robot.operator.getBButton()){
+        this.robot.r_pidController.setReference(-800, ControlType.kVelocity);
+      }
+      if(this.robot.operator.getXButton() && !this.robot.operator.getBButton()){
+        this.robot.f_pidController.setReference(200, ControlType.kVelocity);
+        //this.robot.r_pidController.setReference(-1000, ControlType.kVelocity);
+        //this.robot.s_pidController.setReference(0, ControlType.kVelocity);
+      }
+      else if(!this.robot.operator.getBButton()){
+        this.robot.f_pidController.setReference(0, ControlType.kVelocity);
       }
       /*
       double intakerPower=0;
@@ -498,9 +538,10 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("visionMovePower", visionMovePower);
     SmartDashboard.putNumber("targetDistance", targetDistance);
     SmartDashboard.putNumber("distance", distance);
-    double leftPow = (forward+turn) * robot.dv_maxRPM*0.75;
-    double rightPow = (forward-turn) * robot.dv_maxRPM*0.75;
+    double leftPow = (forward+turn) * robot.dv_maxRPM*0.85;
+    double rightPow = (forward-turn) * robot.dv_maxRPM*0.85;
     if (robot.driver.getXButton()&&tv==1){
+      //just changed the direction at 2:48
       this.robot.leftdrive_pidController.setReference(robot.dv_maxRPM*-visionTurnPower, ControlType.kVelocity);
       this.robot.rightdrive_pidController.setReference(robot.dv_maxRPM*visionTurnPower, ControlType.kVelocity);
 
@@ -511,13 +552,13 @@ public class Robot extends TimedRobot {
       this.robot.leftdrive_pidController.setReference(leftPow, ControlType.kVelocity);
     this.robot.rightdrive_pidController.setReference(rightPow, ControlType.kVelocity);
     }
-    if (Math.abs(this.robot.leftdrive_pidController_encoder.getVelocity())<2000&&Math.abs(this.robot.leftdrive_pidController_encoder.getVelocity())<2000){
+    if (Math.abs(this.robot.leftdrive_pidController_encoder.getVelocity())<1500&&Math.abs(this.robot.rightdrive_pidController_encoder.getVelocity())<1500){
       //Low gear
-      robot.shifter.set(Value.kForward);
-      SmartDashboard.putString("gear", "Low");
-    }else if(Math.abs(this.robot.leftdrive_pidController_encoder.getVelocity())>3000&&Math.abs(this.robot.leftdrive_pidController_encoder.getVelocity())>3000){
-      //High gear
       robot.shifter.set(Value.kReverse);
+      SmartDashboard.putString("gear", "Low");
+    }else if(Math.abs(this.robot.leftdrive_pidController_encoder.getVelocity())>2500&&Math.abs(this.robot.rightdrive_pidController_encoder.getVelocity())>2500){
+      //High gear
+      robot.shifter.set(Value.kForward);
       SmartDashboard.putString("gear", "High");
     }
     
@@ -571,6 +612,11 @@ public class Robot extends TimedRobot {
       SmartDashboard.putNumber("leftEncoder", this.robot.leftdrive_pidController_encoder.getPosition());
       SmartDashboard.putNumber("rightEncoder", this.robot.rightdrive_pidController_encoder.getPosition());
   }
+  @Override
+  public void disabledPeriodic() {
+    firstTimeIndicator1=true;
+  }
+
   @Override
   public void testInit() {
     this.teleopInit();

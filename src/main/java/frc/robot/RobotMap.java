@@ -44,8 +44,8 @@ public class RobotMap {
 	public CANEncoder rightdrive_pidController_encoder;
 	private static final int shooter1Port = 5, shooter2Port = 8,feederPort =7,revolverPort =9, intakerPort =6,
 						leftDrive1Port = 1, leftDrive2Port = 2, rightDrive1Port = 3, rightDrive2Port = 4;
-	private static final int shooterServo1Port=1,shooterServo2Port=2, shifterPort1=2,shifterPort2=3,
-						ptoPort1=4,ptoPort2=5,intakeExtentionPort1=0,intakeExtentionPort2=1;
+	private static final int shooterServo1Port=1,shooterServo2Port=2, shifterPort1=2,shifterPort2=6,
+						ptoPort1=1,ptoPort2=5,intakeExtentionPort1=3,intakeExtentionPort2=7;
 	
 	public double gearRatioLow=14.88,gearRatioHigh=6.55;
 	public double wheelRotationToInch=Math.PI*6;
@@ -79,6 +79,11 @@ public class RobotMap {
 		this.rightDrive2.follow(this.rightDrive);
 		this.shooter2.follow(this.shooter1, true);
 		this.rightDrive.setInverted(true);
+		this.leftDrive.setSmartCurrentLimit(40);
+		this.rightDrive.setSmartCurrentLimit(40);
+		this.shooter1.setSmartCurrentLimit(40);
+		this.revolver.setSmartCurrentLimit(40);
+		this.feeder.setSmartCurrentLimit(40);
 
 
 		rightdrive_pidController=rightDrive.getPIDController();
