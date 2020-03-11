@@ -1,15 +1,11 @@
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.FeedbackDevice;
-import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.revrobotics.CANEncoder;
 import com.revrobotics.CANPIDController;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 //import com.kauailabs.navx.frc.AHRS;
 
-import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DigitalInput;
@@ -26,19 +22,12 @@ public class RobotMap {
 
 	
 	public CANSparkMax leftDrive, rightDrive, leftDrive2, rightDrive2, shooter1,shooter2,feeder,revolver,intaker;
-	public CANPIDController s_pidController;
-	public CANPIDController f_pidController;
-	public CANPIDController r_pidController;
-	public CANEncoder s_encoder;
-	public CANEncoder f_encoder;
-	public CANEncoder r_encoder;
+	public CANPIDController s_pidController, f_pidController, r_pidController, leftdrive_pidController;
+	public CANEncoder s_encoder, f_encoder, r_encoder, leftdrive_pidController_encoder;
 
-	public CANPIDController leftdrive_pidController;
-	public CANEncoder leftdrive_pidController_encoder;
 	public Servo shooterServo1, shooterServo2;
 	public DoubleSolenoid shifter, pto, intakeExtention;
 	//public AHRS ahrs;
-
 
 	public CANPIDController rightdrive_pidController;
 	public CANEncoder rightdrive_pidController_encoder;
@@ -47,15 +36,17 @@ public class RobotMap {
 	private static final int shooterServo1Port=1,shooterServo2Port=2, shifterPort1=2,shifterPort2=6,
 						ptoPort1=1,ptoPort2=5,intakeExtentionPort1=3,intakeExtentionPort2=7;
 	
+	// Shooting Constants
 	public double gearRatioLow=14.88,gearRatioHigh=6.55;
 	public double wheelRotationToInch=Math.PI*6;
 	
-	public double kP, kI, kD, kIz, kFF, kMaxOutput, kMinOutput, maxRPM;
-	public double dv_kp=.000005, dv_ki=.0000005, dv_kd=.000001, dv_kiz=500, dv_kff=.000175, dv_maxRPM=5700;
-	public double dp_kp=.0018, dp_ki=.000002, dp_kd=.000001, dp_kiz=500, dp_kff=.000175, dp_maxRPM=5700; 
-	public double s_kp=0.00010,s_ki=0.0000001,s_kd=0,s_kiz=400,s_kff=0.000175,s_kMaxOutput=0,s_kMinOutput=-1,s_maxRPM=5700, s_iAccum=0;
-	public double f_kp=0.00015,f_ki=0.000001,f_kd=0,f_kiz=2000,f_kff=0,f_kMaxOutput=1,f_kMinOutput=-1,f_maxRPM=5700;
-	public double r_kp=0.00025,r_ki=0.000001,r_kd=0,r_kiz=2000,r_kff=0,r_kMaxOutput=1,r_kMinOutput=-1,r_maxRPM=5700;
+	// PID Constants
+	public double maxRPM = 5700;
+	public double dv_kp=.000005, dv_ki=.0000005, dv_kd=.000001, dv_kiz=500, dv_kff=.000175;
+	public double dp_kp=.0018, dp_ki=.000002, dp_kd=.000001, dp_kiz=500, dp_kff=.000175; 
+	public double s_kp=0.00010,s_ki=0.0000001,s_kd=0,s_kiz=1000,s_kff=0.000175,s_kMaxOutput=0,s_kMinOutput=-1, s_iAccum=0;
+	public double f_kp=0.0001,f_ki=0.0000010,f_kd=0,f_kiz=1500,f_kff=0.00019;
+	public double r_kp=0.0001,r_ki=0.000000,r_kd=0,r_kiz=0,r_kff=0.0002;
 
 	public double limelight2MaxY=24.85,limelight2MaxX=29.8;
 
@@ -64,6 +55,8 @@ public class RobotMap {
 	public NetworkTable limelight;
 
 	RobotMap() {
+
+		//Declaration
 		this.leftDrive = new CANSparkMax(leftDrive1Port, MotorType.kBrushless);
 		this.leftDrive2 = new CANSparkMax(leftDrive2Port, MotorType.kBrushless);
 		this.rightDrive = new CANSparkMax(rightDrive1Port, MotorType.kBrushless);
@@ -75,6 +68,7 @@ public class RobotMap {
 		this.revolver=new CANSparkMax(revolverPort, MotorType.kBrushless);
 		//this.intaker=new CANSparkMax(intakerPort,MotorType.kBrushless);
 
+		//Setting up
 		this.leftDrive2.follow(this.leftDrive);
 		this.rightDrive2.follow(this.rightDrive);
 		this.shooter2.follow(this.shooter1, true);
@@ -88,6 +82,7 @@ public class RobotMap {
 
 		rightdrive_pidController=rightDrive.getPIDController();
 		leftdrive_pidController=leftDrive.getPIDController();
+
 		rightdrive_pidController_encoder=rightDrive.getEncoder();
 		leftdrive_pidController_encoder=leftDrive.getEncoder();
 
@@ -106,8 +101,8 @@ public class RobotMap {
 		
 		
 		setUpPIDController(s_pidController,s_kp,s_ki,s_kd,s_kiz,s_kff,s_kMaxOutput,s_kMinOutput);
-		setUpPIDController(r_pidController,r_kp,r_ki,r_kd,r_kiz,r_kff,r_kMaxOutput,r_kMinOutput);
-		setUpPIDController(f_pidController,f_kp,f_ki,f_kd,f_kiz,f_kff,f_kMaxOutput,f_kMinOutput);
+		setUpPIDController(r_pidController,r_kp,r_ki,r_kd,r_kiz,r_kff,1,-1);
+		setUpPIDController(f_pidController,f_kp,f_ki,f_kd,f_kiz,f_kff,1,-1);
 		
 		this.limelight = NetworkTableInstance.getDefault().getTable("limelight");
 
