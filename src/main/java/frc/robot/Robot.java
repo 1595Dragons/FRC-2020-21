@@ -35,15 +35,15 @@ public class Robot extends TimedRobot {
 		this.robot.limelight.getEntry("pipeline").setNumber(0);
 		this.autoTimer.reset();
 		this.autoTimer.start();
-		this.autoEndTime = SmartDashboard.getNumber("autoEndTime", autoEndTime);
-		this.autoShoot = SmartDashboard.getBoolean("autoShoot", autoShoot);
+		this.autoEndTime = SmartDashboard.getNumber("autoEndTime", this.autoEndTime);
+		this.autoShoot = SmartDashboard.getBoolean("autoShoot", this.autoShoot);
 
 		this.shooterReady = false;
 
-		autoTargetPosition1 = SmartDashboard.getNumber("autoTargetPosition1", autoTargetPosition1);
-		usePreSetShooterPower = SmartDashboard.getBoolean("usePreSetShooterPower", usePreSetShooterPower);
+		this.autoTargetPosition1 = SmartDashboard.getNumber("autoTargetPosition1", this.autoTargetPosition1);
+		this.usePreSetShooterPower = SmartDashboard.getBoolean("usePreSetShooterPower", this.usePreSetShooterPower);
 
-		autoTimer.start();
+		this.autoTimer.start();
 	}
 
 	/**
@@ -82,13 +82,13 @@ public class Robot extends TimedRobot {
 
 		this.robot.setupPIDs();
 
-		usePreSetShooterPower = SmartDashboard.getBoolean("usePreSetShooterPower", usePreSetShooterPower);
-		robot.s_pidController.setIMaxAccum(Constants.s_iAccum.getValue(), 0);
+		this.usePreSetShooterPower = SmartDashboard.getBoolean("usePreSetShooterPower", this.usePreSetShooterPower);
+		this.robot.s_pidController.setIMaxAccum(Constants.s_iAccum.getValue(), 0);
 
 		this.robot.limelight.getEntry("pipeline").setNumber(0);
-		shooterReady = false;
-		robot.leftdrive_pidController_encoder.setPosition(0);
-		robot.rightdrive_pidController_encoder.setPosition(0);
+		this.shooterReady = false;
+		this.robot.leftdrive_pidController_encoder.setPosition(0);
+		this.robot.rightdrive_pidController_encoder.setPosition(0);
 	}
 
 	/**
@@ -98,7 +98,8 @@ public class Robot extends TimedRobot {
 	public void teleopPeriodic() {
 
 		if (!this.robot.operator.getBButton() && !this.robot.operator.getAButton()) {
-			this.robot.r_pidController.setReference(800 - 800 * this.robot.operator.getY(Hand.kLeft), ControlType.kVelocity);
+			this.robot.r_pidController.setReference(800 - 800 * this.robot.operator.getY(Hand.kLeft),
+					ControlType.kVelocity);
 		}
 
 		if (this.robot.operator.getAButton() && !this.robot.operator.getBButton()) {
@@ -146,30 +147,29 @@ public class Robot extends TimedRobot {
 	}
 
 	/**
-	 * TODO Documentation
+	 * Gets the forward power determined by the driver's left stick (on the Y axis).
 	 *
-	 * @return
+	 * @return The value of 80% of the Y axis or 0 of the value is below 0.75.
 	 */
 	private double getForward() {
 		return (Math.abs(this.robot.driver.getY(Hand.kLeft)) > .075) ? this.robot.driver.getY(Hand.kLeft) * .8 : 0;
 	}
 
 	/**
-	 * TODO Documentation
+	 * Gets the turn power determined by the driver's left stick (on the X axis).
 	 *
-	 * @return
+	 * @return The value of 60% of the X axis or 0 of the value is below 0.75.
 	 */
 	private double getTurn() {
 		return (Math.abs(this.robot.driver.getX(Hand.kRight)) > .075) ? this.robot.driver.getX(Hand.kRight) * .6 : 0;
 	}
 
-
 	/**
-	 * TODO Documentation
+	 * Determines the drive method (vision assisted or standard), and what values to run the drive train at.
 	 *
-	 * @param distance
-	 * @param tx
-	 * @param tv
+	 * @param distance The distance from the vision target (for vision assisted driving)
+	 * @param tx       The center location of the vision target on the X axis (how far off center it is)
+	 * @param tv       Whether a vision target is found (either a 1.0 or a 0.0)
 	 */
 	private void drive(double distance, double tx, double tv) {
 
@@ -200,7 +200,7 @@ public class Robot extends TimedRobot {
 	}
 
 	/**
-	 * TODO Documentation
+	 * Performs the shifting from low to high gear (and vice-versa) if a RPM threshold (1.5k rmp) is met.
 	 */
 	private void shift() {
 		if (Math.abs(this.robot.leftdrive_pidController_encoder.getVelocity()) < 1500 &&
@@ -217,9 +217,9 @@ public class Robot extends TimedRobot {
 	}
 
 	/**
-	 * TODO Documentation
+	 * Runs the shooter portion of the teleop program (mostly just aiming and firing)
 	 *
-	 * @param distance
+	 * @param distance The distance of the vision target.
 	 */
 	private void checkShooter(double distance) {
 		this.shooterReady = !this.robot.operator.getBButtonReleased();
