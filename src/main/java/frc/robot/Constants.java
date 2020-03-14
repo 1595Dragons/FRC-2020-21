@@ -38,7 +38,8 @@ public class Constants {
 	 */
 	public static final double visionCenterHeight = 89.4d, //should be 89.75 base on official guild
 			cameraHeight = 6.6d, cameraAngle = 31d, distanceModifier = 1.115d,
-			gearRatioLow = 14.88d, gearRatioHigh = 6.55d, wheelRotationToInch = Math.PI * 6;
+			gearRatioLow = 14.88d, gearRatioHigh = 6.55d, wheelRotationToInch = Math.PI * 6, shooterHeight = 20.0d,
+			g = 386.2d, goalHeight = 98.25d, shooterAngleMax = 65.0d, shooterAngleMin = 30.0d, goalDepth = 29.25d;
 	public static final Constants targetDistance = new Constants("targetDistance", 120.0d);
 
 	/**
