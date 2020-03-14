@@ -18,6 +18,13 @@ public class RobotMap {
 	/**
 	 * TODO Documentation
 	 */
+	public MiniPID tx_Pid = new MiniPID(Constants.tx_kp.getValue(), Constants.tx_ki.getValue(), Constants.tx_kd.getValue()),
+			ty_Pid = new MiniPID(Constants.ty_kp.getValue(), Constants.ty_ki.getValue(), Constants.ty_kd.getValue()),
+			ahrs_Pid = new MiniPID(Constants.ahrs_kp.getValue(), Constants.ahrs_ki.getValue(), Constants.ahrs_kd.getValue());
+
+	/**
+	 * TODO Documentation
+	 */
 	public CANSparkMax leftDrive, rightDrive, leftDrive2, rightDrive2, shooter1, shooter2, feeder, revolver, intaker;
 
 	/**
@@ -178,6 +185,33 @@ public class RobotMap {
 		this.shooter1.setSmartCurrentLimit(40);
 		this.revolver.setSmartCurrentLimit(40);
 		this.feeder.setSmartCurrentLimit(40);
+	}
+
+	/**
+	 * TODO Documentation and comments
+	 */
+	public void setupPIDs() {
+		this.setupSRF();
+
+		this.leftdrive_pidController_encoder.setPosition(0);
+		this.rightdrive_pidController_encoder.setPosition(0);
+
+		this.resetDrivePIDs(0.8d);
+
+		this.tx_Pid.reset();
+		this.tx_Pid.setPID(Constants.tx_kp.getValue(), Constants.tx_ki.getValue(), Constants.tx_kd.getValue());
+		this.tx_Pid.setMaxIOutput(Constants.tx_iMax.getValue());
+		this.tx_Pid.setSetpoint(Constants.txShoot.getValue());
+		this.tx_Pid.setOutputLimits(0.4);
+
+		this.ty_Pid.reset();
+		this.ty_Pid.setPID(Constants.ty_kp.getValue(), Constants.ty_ki.getValue(), Constants.ty_kd.getValue());
+		this.ty_Pid.setSetpoint(Constants.targetDistance.getValue());
+		this.ty_Pid.setOutputLimits(0.4);
+
+		this.ahrs_Pid.reset();
+		this.ahrs_Pid.setPID(Constants.ahrs_kp.getValue(), Constants.ahrs_ki.getValue(), Constants.ahrs_kd.getValue());
+		this.ahrs_Pid.setOutputLimits(0.5);
 	}
 
 	/**

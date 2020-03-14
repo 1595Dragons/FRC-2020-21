@@ -1,6 +1,5 @@
 package frc.robot;
 
-
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
@@ -13,25 +12,34 @@ public class Constants {
 	/**
 	 * Setpoint Shooting constants
 	 */
-	public static final double feedSpeed = 5700d, feedRatio = 0.2d, shooterPower = 0.7d;
+	public static final double shooterPower = 0.7d;
+	public static final Constants feedSpeed = new Constants("feedSpeed", 5700d),
+			feedRatio = new Constants("feedRatio", 0.2d);
 
 	/**
 	 * Limelight and navX constants
 	 */
-	public static final double tx_kp = 0.017,
-			tx_ki = 0.00002d, tx_kd = 0.0d,
-			tx_iMax = 0.02d, ty_kp = 0.016d,
-			ty_ki = 0.0001d, ty_kd = 0.0d,
-			ahrs_kp = 0.0002d, ahrs_ki = 0.000001d,
-			ahrs_kd = 0.000001d, txShoot = 0.0d,
-			tyShoot = 0.0d, taShoot = 0.1d;
+	public static final Constants taShoot = new Constants("taShoot", 0.1d),
+			txShoot = new Constants("txShoot", 0.0d),
+			tyShoot = new Constants("tyShoot", 0.0d),
+			tx_kp = new Constants("tx_kp", 0.017d),
+			tx_ki = new Constants("tx_ki", 0.00002d),
+			tx_kd = new Constants("tx_kd", 0.0d),
+			tx_iMax = new Constants("tx_iMax", 0.02d),
+			ty_kp = new Constants("ty_kp", 0.016d),
+			ty_ki = new Constants("ty_ki", 0.0001d),
+			ty_kd = new Constants("ty_kd", 0.0d),
+			ahrs_kp = new Constants("ahrs_kp", 0.0002d),
+			ahrs_ki = new Constants("ahrs_ki", 0.000001d),
+			ahrs_kd = new Constants("ahrs_kd", 0.000001d);
 
 	/**
 	 * Shooter constants
 	 */
 	public static final double visionCenterHeight = 89.4d, //should be 89.75 base on official guild
-			cameraHeight = 6.6d, cameraAngle = 31d, distanceModifier = 1.115d, targetDistance = 120d,
+			cameraHeight = 6.6d, cameraAngle = 31d, distanceModifier = 1.115d,
 			gearRatioLow = 14.88d, gearRatioHigh = 6.55d, wheelRotationToInch = Math.PI * 6;
+	public static final Constants targetDistance = new Constants("targetDistance", 120.0d);
 
 	/**
 	 * PID Constants (What are these used for?)
