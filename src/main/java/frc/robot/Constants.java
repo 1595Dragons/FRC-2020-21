@@ -3,7 +3,26 @@ package frc.robot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
- * TODO Documentation
+ * 你好朋友！Be sure to read the following header documentation for a better of this class, and how to use it.
+ * <br />
+ * <br />
+ * <p>
+ * Starting with all the static constants (declared as public static final double), these values are only declared here,
+ * and are not added to the SmartDashboard. Since it can only be edited here,
+ * if you want to make a change you will have to change it in the code and then recompile. Not ideal,
+ * but hopefully for those constants you wont be changing those often.
+ * <p>
+ * However there are a few constants that you will want to edit without the need to recompile.
+ * For that you will use the SmartDashboard to display and edit those vales, but retrieving those can be somewhat tedious.
+ * <p>
+ * THis class aims to make that less tedious, and more intuitive.
+ * <p>
+ * To declare a new constant that you want to use within the SmartDashboard,
+ * use {@code public static final Constants k = new Constants("k", 10.0d)}.
+ * This will create an entry within SmartDashboard for k. To retrieve the values of K, use {@code k.getValue()}.
+ * <p>
+ * Once you have found a good default value, you can then return to the source code and adjust it here,
+ * and then recompile for next time.
  *
  * @author Spud
  */
@@ -89,20 +108,24 @@ public class Constants {
 			dv_kff = new Constants("dv_kff", 0.000175d);
 
 	/**
-	 * TODO Documentation
+	 * The key of the value used by Smartdashboard.
+	 * This is never really used by the end user other than in the SmartDashboard, so it doesn't need a getter method.
 	 */
 	protected String key;
 
 	/**
-	 * TODO Documentation
+	 * The value of the constant.
+	 * Because this will be retrieved from the SmartDashboard a custom getter method should be used.
 	 */
 	private double value;
 
 	/**
-	 * TODO Documentation
+	 * Creates a constant value that will be added to the SmartDashboard.
 	 *
-	 * @param key
-	 * @param defaultValue
+	 * @param key          The key of the constant. Aside from being used on SmartDashboard,
+	 *                     this value is never accessed outside this class.
+	 * @param defaultValue The default value of this constant. If nothing is provided within SmartDashboard for this entry,
+	 *                     this value will be returned instead.
 	 */
 	public Constants(String key, double defaultValue) {
 		this.key = key;
@@ -111,21 +134,12 @@ public class Constants {
 	}
 
 	/**
-	 * TODO Documentation
+	 * Gets the value of the constant from SmartDashboard. This will always return a value.
+	 * Even if nothing is in SmartDashboard, the default value provided at the constructor of the constant will be returned.
 	 *
-	 * @return
+	 * @return The value of the constant from SmartDashboard.
 	 */
 	public double getValue() {
 		return SmartDashboard.getNumber(this.key, this.value);
-	}
-
-	/**
-	 * TODO Documentation
-	 *
-	 * @param constant
-	 * @return
-	 */
-	public static double getValue(Constants constant) {
-		return SmartDashboard.getNumber(constant.key, constant.value);
 	}
 }
