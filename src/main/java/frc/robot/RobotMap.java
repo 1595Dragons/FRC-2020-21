@@ -11,54 +11,45 @@ import edu.wpi.first.wpilibj.Servo;
 import edu.wpi.first.wpilibj.XboxController;
 
 /**
- * TODO Documentation
+ * This class houses motors, solenoids, and motor controllers used on the robot.
+ * Hence the name RobotMap, it maps out all the objects on the robot.
  */
 public class RobotMap {
 
 	/**
-	 * TODO Documentation
+	 * PIDs used for positioning.
 	 */
 	public MiniPID tx_Pid = new MiniPID(Constants.tx_kp.getValue(), Constants.tx_ki.getValue(), Constants.tx_kd.getValue()),
 			ty_Pid = new MiniPID(Constants.ty_kp.getValue(), Constants.ty_ki.getValue(), Constants.ty_kd.getValue()),
 			ahrs_Pid = new MiniPID(Constants.ahrs_kp.getValue(), Constants.ahrs_ki.getValue(), Constants.ahrs_kd.getValue());
 
 	/**
-	 * TODO Documentation
+	 * Motor controllers used on the robot.
 	 */
 	public CANSparkMax leftDrive, rightDrive, leftDrive2, rightDrive2, shooter1, shooter2, feeder, revolver, intaker;
 
 	/**
-	 * TODO Documentation
+	 * PID controllers used for various CAN devices (such as drivetrain, and shooter mechanisms).
 	 */
-	public CANPIDController s_pidController, f_pidController, r_pidController, leftdrive_pidController;
+	public CANPIDController s_pidController, f_pidController, r_pidController, leftdrive_pidController, rightdrive_pidController;
 
 	/**
-	 * TODO Documentation
+	 * Encoders used on the CAN bus by various motors.
 	 */
-	public CANEncoder s_encoder, f_encoder, r_encoder, leftdrive_pidController_encoder;
+	public CANEncoder s_encoder, f_encoder, r_encoder, leftdrive_pidController_encoder, rightdrive_pidController_encoder;
 
 	/**
-	 * TODO Documentation
+	 * Servos used on the robot.
 	 */
 	public Servo shooterServo1, shooterServo2;
 
 	/**
-	 * TODO Documentation
+	 * Solenoids used on the robot (solenoids are used for pneumatic stuff).
 	 */
 	public DoubleSolenoid shifter, pto, intakeExtension;
 
 	/**
-	 * TODO Documentation
-	 */
-	public CANPIDController rightdrive_pidController;
-
-	/**
-	 * TODO Documentation
-	 */
-	public CANEncoder rightdrive_pidController_encoder;
-
-	/**
-	 * TODO Documentation
+	 * All the port addresses for various motors and devices on the CAN bus daisy chain.
 	 */
 	private static final int shooter1Port = 5, shooter2Port = 8, feederPort = 7, revolverPort = 9, intakerPort = 6,
 			leftDrive1Port = 1, leftDrive2Port = 2, rightDrive1Port = 3, rightDrive2Port = 4, shooterServo1Port = 1,
@@ -66,21 +57,25 @@ public class RobotMap {
 			intakeExtentionPort1 = 3, intakeExtentionPort2 = 7;
 
 	/**
-	 * TODO Documentation
+	 * The limelight networktable entry (for easier lookup).
+	 * <p>
+	 * TODO Perhaps it would be worth wile looking into making a dedicated limelight class?
+	 * But that's for later
 	 */
 	public NetworkTable limelight;
 
 	/**
-	 * TODO Documentation
+	 * Values used for the limelight.
+	 * I cant find where these are used, perhaps they should be removed?
 	 */
 	public double limelight2MaxY = 24.85, limelight2MaxX = 29.8;
 
 	/**
-	 * TODO Documentation
+	 * Controllers used by the driver and operator.
 	 */
 	public final XboxController driver = new XboxController(0), operator = new XboxController(1);
 
-	RobotMap() {
+	public RobotMap() {
 
 		this.declareMotors();
 
@@ -124,18 +119,20 @@ public class RobotMap {
 	}
 
 	/**
-	 * TODO Documentation
+	 * Resets the drivetrain PIDs
 	 *
-	 * @param max TODO
+	 * @param max The maximum output value allowed. Note the minimum value is also derived from this (-1 * max).
 	 */
 	public void resetDrivePIDs(double max) {
 		// Reset the right drivetrain
-		this.setUpPIDController(this.rightdrive_pidController, Constants.dv_kp.getValue(), Constants.dv_ki.getValue(),
-				Constants.dv_kd.getValue(), Constants.dv_kiz.getValue(), Constants.dv_kff.getValue(), max, -max);
+		this.rightdrive_pidController = this.setUpPIDController(this.rightdrive_pidController, Constants.dv_kp.getValue(),
+				Constants.dv_ki.getValue(), Constants.dv_kd.getValue(), Constants.dv_kiz.getValue(),
+				Constants.dv_kff.getValue(), max, -max);
 
 		// Reset the left drivetrain
-		this.setUpPIDController(this.leftdrive_pidController, Constants.dv_kp.getValue(), Constants.dv_ki.getValue(),
-				Constants.dv_kd.getValue(), Constants.dv_kiz.getValue(), Constants.dv_kff.getValue(), max, -max);
+		this.leftdrive_pidController = this.setUpPIDController(this.leftdrive_pidController, Constants.dv_kp.getValue(),
+				Constants.dv_ki.getValue(), Constants.dv_kd.getValue(), Constants.dv_kiz.getValue(),
+				Constants.dv_kff.getValue(), max, -max);
 	}
 
 	/**
@@ -143,17 +140,19 @@ public class RobotMap {
 	 */
 	public void setupSRF() {
 		// Setup the shooter PID
-		this.setUpPIDController(this.s_pidController, Constants.s_kp.getValue(), Constants.s_ki.getValue(),
-				Constants.s_kd.getValue(), Constants.s_kiz.getValue(), Constants.s_kff.getValue(),
-				Constants.s_kMaxOutput.getValue(), Constants.s_kMinOutput.getValue());
+		this.s_pidController = this.setUpPIDController(this.s_pidController, Constants.s_kp.getValue(),
+				Constants.s_ki.getValue(), Constants.s_kd.getValue(), Constants.s_kiz.getValue(),
+				Constants.s_kff.getValue(), Constants.s_kMaxOutput.getValue(), Constants.s_kMinOutput.getValue());
 
 		// Do the same for the revolver
-		this.setUpPIDController(this.r_pidController, Constants.r_kp.getValue(), Constants.r_ki.getValue(),
-				Constants.r_kd.getValue(), Constants.r_kiz.getValue(), Constants.r_kff.getValue(), 1, -1);
+		this.r_pidController = this.setUpPIDController(this.r_pidController, Constants.r_kp.getValue(),
+				Constants.r_ki.getValue(), Constants.r_kd.getValue(), Constants.r_kiz.getValue(),
+				Constants.r_kff.getValue(), 1, -1);
 
 		// Finish it off with the feeder
-		this.setUpPIDController(this.f_pidController, Constants.f_kp.getValue(), Constants.f_ki.getValue(),
-				Constants.f_kd.getValue(), Constants.f_kiz.getValue(), Constants.f_kff.getValue(), 1, -1);
+		this.f_pidController = this.setUpPIDController(this.f_pidController, Constants.f_kp.getValue(),
+				Constants.f_ki.getValue(), Constants.f_kd.getValue(), Constants.f_kiz.getValue(),
+				Constants.f_kff.getValue(), 1, -1);
 	}
 
 	/**
@@ -188,51 +187,64 @@ public class RobotMap {
 	}
 
 	/**
-	 * TODO Documentation and comments
+	 * Sets up PIDs for the drivetrain. This is primarily used in autonomous.
 	 */
 	public void setupPIDs() {
+
+		// Setup the shooter revolver and feeder.
 		this.setupSRF();
 
+		// Reset the drivetrain encoders to 0
 		this.leftdrive_pidController_encoder.setPosition(0);
 		this.rightdrive_pidController_encoder.setPosition(0);
 
+		// Reset the drivetrain PIDs
 		this.resetDrivePIDs(0.8d);
 
+		// Reset Tx
 		this.tx_Pid.reset();
 		this.tx_Pid.setPID(Constants.tx_kp.getValue(), Constants.tx_ki.getValue(), Constants.tx_kd.getValue());
 		this.tx_Pid.setMaxIOutput(Constants.tx_iMax.getValue());
 		this.tx_Pid.setSetpoint(Constants.txShoot.getValue());
 		this.tx_Pid.setOutputLimits(0.4);
 
+		// Reset Ty
 		this.ty_Pid.reset();
 		this.ty_Pid.setPID(Constants.ty_kp.getValue(), Constants.ty_ki.getValue(), Constants.ty_kd.getValue());
 		this.ty_Pid.setSetpoint(Constants.targetDistance.getValue());
 		this.ty_Pid.setOutputLimits(0.4);
 
+		// Reset AHRS
 		this.ahrs_Pid.reset();
 		this.ahrs_Pid.setPID(Constants.ahrs_kp.getValue(), Constants.ahrs_ki.getValue(), Constants.ahrs_kd.getValue());
 		this.ahrs_Pid.setOutputLimits(0.5);
 	}
 
 	/**
-	 * TODO Documentation
+	 * Sets up the PIDs for the PID Controller.
 	 *
-	 * @param controller TODO
-	 * @param kp         TODO
-	 * @param ki         TODO
-	 * @param kd         TODO
-	 * @param kiz        TODO
-	 * @param kff        TODO
-	 * @param max        TODO
-	 * @param min        TODO
+	 * @param controller The CANPIDController object to update.
+	 * @param kp         The proportional value of the PID.
+	 * @param ki         The integral value of the PID.
+	 * @param kd         The derivative value of the PID.
+	 * @param kiz        The integral zone of the PID.
+	 * @param kff        The feed forward gain constant of the PID.
+	 * @param max        The maximum output value.
+	 * @param min        The minimum output value.
+	 * @return A new CANPIDController with all the provided values as arguments.
 	 */
-	public void setUpPIDController(CANPIDController controller, double kp, double ki, double kd, double kiz, double kff, double max, double min) {
+	public CANPIDController setUpPIDController(CANPIDController controller, double kp, double ki, double kd, double kiz,
+	                                           double kff, double max, double min) {
 		controller.setP(kp);
 		controller.setI(ki);
 		controller.setD(kd);
 		controller.setIZone(kiz);
 		controller.setFF(kff);
 		controller.setOutputRange(min, max);
+
+		// Because java is always pass by value, we need to return the controller that was entered as it has adjusted values.
+		// Otherwise the changes made will be ignored when this function returns.
+		return controller;
 	}
 }
 	
